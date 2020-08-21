@@ -1,4 +1,4 @@
-# twtxt_flutter
+# goryon 🐦🐦🐦
 A flutter client for twtxt
 
 
