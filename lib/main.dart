@@ -102,7 +102,7 @@ class _LoginState extends State<Login> {
     return Scaffold(
       appBar: AppBar(title: Text('Twtxt')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(32.0),
         child: AutofillGroup(
           child: Form(
             key: _formKey,
