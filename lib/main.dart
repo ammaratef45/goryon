@@ -141,9 +141,8 @@ class _LoginState extends State<Login> {
                 FutureBuilder(
                   future: _loginFuture,
                   builder: (context, snapshot) {
-                    Widget child = const Text('Login');
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return CircularProgressIndicator();
+                      return Center(child: CircularProgressIndicator());
                     }
 
                     return RaisedButton(
@@ -154,7 +153,7 @@ class _LoginState extends State<Login> {
                           _loginFuture = _handleLogin(context);
                         });
                       },
-                      child: child,
+                      child: const Text('Login'),
                     );
                   },
                 ),
@@ -276,9 +275,8 @@ class _RegisterState extends State<Register> {
                 FutureBuilder(
                   future: _registerFuture,
                   builder: (context, snapshot) {
-                    Widget child = const Text('Register');
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return CircularProgressIndicator();
+                      return Center(child: CircularProgressIndicator());
                     }
 
                     return RaisedButton(
@@ -289,7 +287,7 @@ class _RegisterState extends State<Register> {
                           _registerFuture = _handleRegister(context);
                         });
                       },
-                      child: child,
+                      child: const Text('Register'),
                     );
                   },
                 ),
@@ -348,9 +346,7 @@ class _AuthWidgetState extends State<AuthWidget> {
 
           return Scaffold(
             body: Center(
-              child: CircularProgressIndicator(
-                backgroundColor: Theme.of(context).primaryColor,
-              ),
+              child: CircularProgressIndicator(),
             ),
           );
         },
@@ -414,9 +410,7 @@ class _TimelineState extends State<Timeline> {
         builder: (context, timelineViewModel, user, _) {
           if (timelineViewModel.isLoading) {
             return Center(
-              child: CircularProgressIndicator(
-                backgroundColor: Theme.of(context).primaryColor,
-              ),
+              child: CircularProgressIndicator(),
             );
           }
           final twts = timelineViewModel.twts;
