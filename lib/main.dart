@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:provider/provider.dart';
-import 'package:twtxt_flutter/api.dart';
-import 'package:twtxt_flutter/models.dart';
-import 'package:twtxt_flutter/viewmodels.dart';
 import 'package:http/http.dart' as http;
 import 'package:markdown/markdown.dart' as md;
+import 'package:provider/provider.dart';
+import 'package:twtxt_flutter/api.dart';
 import 'package:twtxt_flutter/common_widgets.dart';
+import 'package:twtxt_flutter/models.dart';
+import 'package:twtxt_flutter/viewmodels.dart';
 
 void main() {
   runApp(MyApp());
@@ -30,12 +30,20 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           home: AuthWidget(snapshot: snapshot),
           theme: ThemeData(
-            primaryColor: Colors.white,
             appBarTheme: AppBarTheme(
+              textTheme: TextTheme(
+                headline6: TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold),
+              ),
+              iconTheme: IconThemeData(color: Colors.black),
+              actionsIconTheme: IconThemeData(color: Colors.black),
               elevation: 0.5,
               color: Colors.grey[50],
             ),
             inputDecorationTheme: InputDecorationTheme(
+              floatingLabelBehavior: FloatingLabelBehavior.never,
               focusedBorder: UnderlineInputBorder(
                 borderSide: BorderSide(color: Colors.blue),
               ),
@@ -98,7 +106,7 @@ class _LoginState extends State<Login> {
         child: AutofillGroup(
           child: Form(
             key: _formKey,
-            child: Column(
+            child: ListView(
               children: [
                 SizedBox(height: 16),
                 TextFormField(
@@ -144,6 +152,141 @@ class _LoginState extends State<Login> {
 
                         setState(() {
                           _loginFuture = _handleLogin(context);
+                        });
+                      },
+                      child: child,
+                    );
+                  },
+                ),
+                SizedBox(height: 8),
+                Builder(builder: (context) {
+                  return FlatButton(
+                    onPressed: () async {
+                      if (await Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => Register())) ??
+                          false) {
+                        Scaffold.of(context).showSnackBar(SnackBar(
+                          content: Text(
+                            'Successfully registered an account. You can now login',
+                          ),
+                        ));
+                      }
+                    },
+                    child: const Text('Register'),
+                  );
+                })
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class Register extends StatefulWidget {
+  @override
+  _RegisterState createState() => _RegisterState();
+}
+
+class _RegisterState extends State<Register> {
+  final _formKey = GlobalKey<FormState>();
+  Future _registerFuture;
+  final _passwordTextController = TextEditingController();
+  final _podURLController = TextEditingController();
+  final _usernameTextController = TextEditingController();
+  final _emailController = TextEditingController();
+
+  Future _handleRegister(BuildContext context) async {
+    try {
+      await context.read<Api>().register(
+            _podURLController.text,
+            _usernameTextController.text,
+            _passwordTextController.text,
+            _podURLController.text,
+          );
+      Navigator.pop(context, true);
+    } catch (e) {
+      var message = 'Unexpected error';
+      if (e is http.ClientException) {
+        message = e.message;
+      }
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text(message)));
+      rethrow;
+    }
+  }
+
+  String requiredFieldValidator(String value) {
+    if (value.isEmpty) {
+      return 'Required';
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Register')),
+      body: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: AutofillGroup(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                SizedBox(height: 16),
+                TextFormField(
+                  validator: requiredFieldValidator,
+                  controller: _usernameTextController,
+                  autofillHints: [AutofillHints.username],
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                  ),
+                ),
+                TextFormField(
+                  validator: requiredFieldValidator,
+                  controller: _passwordTextController,
+                  autofillHints: [AutofillHints.password],
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                  ),
+                ),
+                TextFormField(
+                  autofillHints: [AutofillHints.email],
+                  validator: requiredFieldValidator,
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                  ),
+                ),
+                TextFormField(
+                  autofillHints: [AutofillHints.url],
+                  validator: requiredFieldValidator,
+                  controller: _podURLController,
+                  decoration: InputDecoration(
+                    labelText: 'Pod URL',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                  ),
+                ),
+                SizedBox(height: 32),
+                FutureBuilder(
+                  future: _registerFuture,
+                  builder: (context, snapshot) {
+                    Widget child = const Text('Register');
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    }
+
+                    return RaisedButton(
+                      onPressed: () {
+                        if (!_formKey.currentState.validate()) return;
+
+                        setState(() {
+                          _registerFuture = _handleRegister(context);
                         });
                       },
                       child: child,

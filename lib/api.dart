@@ -53,10 +53,9 @@ class Api {
     return user;
   }
 
-  Future<void> register(String username, String password, String email) async {
-    final _user = await user;
+  Future<void> register(String uri, String username, String password, String email) async {
     final response = await _httpClient.post(
-      _user.podURL.replace(path: "/api/v1/register"),
+      Uri.parse(uri).replace(path: "/api/v1/register"),
       body: jsonEncode({
         'username': username,
         'password': password,
