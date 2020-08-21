@@ -540,10 +540,7 @@ class _NewTwtState extends State<NewTwt> {
               label = SizedBox(
                 height: 16,
                 width: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  backgroundColor: Theme.of(context).primaryColor,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2),
               );
 
             return FloatingActionButton.extended(
