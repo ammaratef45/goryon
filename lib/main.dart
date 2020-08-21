@@ -129,6 +129,7 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 TextFormField(
+                  keyboardType: TextInputType.url,
                   autofillHints: [AutofillHints.url],
                   validator: requiredFieldValidator,
                   controller: _podURLController,
