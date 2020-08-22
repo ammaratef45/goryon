@@ -610,16 +610,24 @@ class _NewTwtState extends State<NewTwt> {
                           scrollDirection: Axis.horizontal,
                           children: [
                             IconButton(
+                              tooltip: 'Bold',
                               icon: Icon(Icons.format_bold),
                               onPressed: () => surroundTextSelection('**'),
                             ),
                             IconButton(
+                              tooltip: 'Underline',
                               icon: Icon(Icons.format_italic),
                               onPressed: () => surroundTextSelection('__'),
                             ),
                             IconButton(
+                              tooltip: 'Code',
                               icon: Icon(Icons.code),
                               onPressed: () => surroundTextSelection('```'),
+                            ),
+                            IconButton(
+                              tooltip: 'Strikethrough',
+                              icon: Icon(Icons.strikethrough_s_rounded),
+                              onPressed: () => surroundTextSelection('~~'),
                             ),
                           ],
                         ),
