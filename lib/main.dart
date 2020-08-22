@@ -647,6 +647,14 @@ class _NewTwtState extends State<NewTwt> {
                                 ')',
                               ),
                             ),
+                            IconButton(
+                              tooltip: 'Image Link',
+                              icon: Icon(Icons.image),
+                              onPressed: () => _surroundTextSelection(
+                                '![](https://',
+                                ')',
+                              ),
+                            )
                           ],
                         ),
                       ),
