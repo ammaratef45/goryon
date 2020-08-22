@@ -448,9 +448,7 @@ class _TimelineState extends State<Timeline> {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: MarkdownBody(
-                          styleSheet: MarkdownStyleSheet(
-                            textScaleFactor: 1.2,
-                          ),
+                          styleSheet: MarkdownStyleSheet(textScaleFactor: 1.2),
                           onTapLink: (link) {
                             print(link);
                           },
@@ -541,26 +539,26 @@ class _NewTwtState extends State<NewTwt> {
     return prompts[_random.nextInt(prompts.length)];
   }
 
-  void surroundTextSelection(String surroundingString) {
+  void _surroundTextSelection(String left, String right) {
     final currentTextValue = _textController.value.text;
     final selection = _textController.selection;
-
+    final middle = selection.textInside(currentTextValue);
     final newTextValue = selection.textBefore(currentTextValue) +
-        '$surroundingString${selection.textInside(currentTextValue)}$surroundingString' +
+        '$left$middle$right' +
         selection.textAfter(currentTextValue);
 
     _textController.value = _textController.value.copyWith(
       text: newTextValue,
-      selection: _textController.selection.copyWith(
-          baseOffset: selection.baseOffset + surroundingString.length,
-          extentOffset: selection.extentOffset + surroundingString.length),
+      selection: TextSelection.collapsed(
+        offset: selection.baseOffset + left.length + middle.length,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FutureBuilder<Object>(
+      floatingActionButton: FutureBuilder(
           future: _savePostFuture,
           builder: (context, snapshot) {
             Widget label = const Text("Post");
@@ -604,7 +602,7 @@ class _NewTwtState extends State<NewTwt> {
                       controller: _textController,
                     ),
                     SizedBox(
-                      height: 64,
+                      height: 32,
                       child: Scrollbar(
                         child: ListView(
                           scrollDirection: Axis.horizontal,
@@ -612,22 +610,42 @@ class _NewTwtState extends State<NewTwt> {
                             IconButton(
                               tooltip: 'Bold',
                               icon: Icon(Icons.format_bold),
-                              onPressed: () => surroundTextSelection('**'),
+                              onPressed: () => _surroundTextSelection(
+                                '**',
+                                '**',
+                              ),
                             ),
                             IconButton(
                               tooltip: 'Underline',
                               icon: Icon(Icons.format_italic),
-                              onPressed: () => surroundTextSelection('__'),
+                              onPressed: () => _surroundTextSelection(
+                                '__',
+                                '__',
+                              ),
                             ),
                             IconButton(
                               tooltip: 'Code',
                               icon: Icon(Icons.code),
-                              onPressed: () => surroundTextSelection('```'),
+                              onPressed: () => _surroundTextSelection(
+                                '```',
+                                '```',
+                              ),
                             ),
                             IconButton(
                               tooltip: 'Strikethrough',
                               icon: Icon(Icons.strikethrough_s_rounded),
-                              onPressed: () => surroundTextSelection('~~'),
+                              onPressed: () => _surroundTextSelection(
+                                '~~',
+                                '~~',
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Link',
+                              icon: Icon(Icons.link_sharp),
+                              onPressed: () => _surroundTextSelection(
+                                '[title](https://',
+                                ')',
+                              ),
                             ),
                           ],
                         ),
