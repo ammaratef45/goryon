@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:twtxt_flutter/api.dart';
 import 'package:twtxt_flutter/common_widgets.dart';
 import 'package:twtxt_flutter/models.dart';
+import 'package:twtxt_flutter/strings.dart';
 import 'package:twtxt_flutter/viewmodels.dart';
 
 void main() {
@@ -20,9 +23,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final api = Api(http.Client(), FlutterSecureStorage());
+
     return MultiProvider(
       providers: [
         Provider.value(value: api),
+        Provider(create: (_) => AppStrings()),
         Provider(create: (_) => AuthViewModel(api)),
       ],
       child: AuthWidgetBuilder(
@@ -30,6 +35,7 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           home: AuthWidget(snapshot: snapshot),
           theme: ThemeData(
+            brightness: Brightness.light,
             appBarTheme: AppBarTheme(
               textTheme: TextTheme(
                 headline6: TextStyle(
@@ -333,26 +339,24 @@ class _AuthWidgetState extends State<AuthWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Consumer<Api>(
-        builder: (context, api, child) {
-          if (widget.snapshot.connectionState == ConnectionState.active) {
-            return widget.snapshot.hasData
-                ? ChangeNotifierProvider(
-                    create: (_) => TimelineViewModel(api),
-                    child: child,
-                  )
-                : Login();
-          }
+    return Consumer<Api>(
+      builder: (context, api, child) {
+        if (widget.snapshot.connectionState == ConnectionState.active) {
+          return widget.snapshot.hasData
+              ? ChangeNotifierProvider(
+                  create: (_) => TimelineViewModel(api),
+                  child: child,
+                )
+              : Login();
+        }
 
-          return Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        },
-        child: Timeline(),
-      ),
+        return Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      },
+      child: Timeline(),
     );
   }
 }
@@ -504,14 +508,18 @@ class NewTwt extends StatefulWidget {
 }
 
 class _NewTwtState extends State<NewTwt> {
+  final _random = Random();
+
   bool _canSubmit = false;
   Future _savePostFuture;
   TextEditingController _textController;
+  String _twtPrompt;
 
   @override
   void initState() {
     super.initState();
     _textController = TextEditingController(text: widget.initialText);
+    _twtPrompt = _getTwtPrompt();
     _textController.addListener(() {
       setState(() {
         _canSubmit = _textController.text.trim().length > 0;
@@ -526,6 +534,11 @@ class _NewTwtState extends State<NewTwt> {
           .savePost(_textController.text)
           .then((value) => Navigator.pop(context, true));
     });
+  }
+
+  String _getTwtPrompt() {
+    final prompts = context.read<AppStrings>().twtPromtpts;
+    return prompts[_random.nextInt(prompts.length)];
   }
 
   @override
@@ -564,6 +577,9 @@ class _NewTwtState extends State<NewTwt> {
               const SizedBox(width: 16.0),
               Expanded(
                 child: TextField(
+                  decoration: InputDecoration(
+                    hintText: _twtPrompt,
+                  ),
                   maxLines: 8,
                   controller: _textController,
                 ),
