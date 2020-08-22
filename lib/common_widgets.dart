@@ -7,18 +7,19 @@ import 'models.dart';
 
 class Avatar extends StatelessWidget {
   final String imageUrl;
+  final double radius;
 
-  const Avatar({Key key, this.imageUrl}) : super(key: key);
+  const Avatar({Key key, this.imageUrl, this.radius = 20}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     if (imageUrl == null) {
-      return CircleAvatar();
+      return CircleAvatar(radius: radius);
     }
 
     return CachedNetworkImage(
       imageUrl: imageUrl,
       imageBuilder: (context, imageProvider) {
-        return CircleAvatar(backgroundImage: imageProvider);
+        return CircleAvatar(backgroundImage: imageProvider, radius: radius);
       },
       placeholder: (context, url) => CircularProgressIndicator(),
     );
