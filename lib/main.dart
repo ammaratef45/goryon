@@ -196,12 +196,12 @@ class Register extends StatefulWidget {
 }
 
 class _RegisterState extends State<Register> {
+  final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  Future _registerFuture;
   final _passwordTextController = TextEditingController();
   final _podURLController = TextEditingController();
+  Future _registerFuture;
   final _usernameTextController = TextEditingController();
-  final _emailController = TextEditingController();
 
   Future _handleRegister(BuildContext context) async {
     try {
@@ -508,9 +508,8 @@ class NewTwt extends StatefulWidget {
 }
 
 class _NewTwtState extends State<NewTwt> {
-  final _random = Random();
-
   bool _canSubmit = false;
+  final _random = Random();
   Future _savePostFuture;
   TextEditingController _textController;
   String _twtPrompt;
@@ -519,6 +518,7 @@ class _NewTwtState extends State<NewTwt> {
   void initState() {
     super.initState();
     _textController = TextEditingController(text: widget.initialText);
+    _textController.buildTextSpan();
     _twtPrompt = _getTwtPrompt();
     _textController.addListener(() {
       setState(() {
@@ -539,6 +539,22 @@ class _NewTwtState extends State<NewTwt> {
   String _getTwtPrompt() {
     final prompts = context.read<AppStrings>().twtPromtpts;
     return prompts[_random.nextInt(prompts.length)];
+  }
+
+  void surroundTextSelection(String surroundingString) {
+    final currentTextValue = _textController.value.text;
+    final selection = _textController.selection;
+
+    final newTextValue = selection.textBefore(currentTextValue) +
+        '$surroundingString${selection.textInside(currentTextValue)}$surroundingString' +
+        selection.textAfter(currentTextValue);
+
+    _textController.value = _textController.value.copyWith(
+      text: newTextValue,
+      selection: _textController.selection.copyWith(
+          baseOffset: selection.baseOffset + surroundingString.length,
+          extentOffset: selection.extentOffset + surroundingString.length),
+    );
   }
 
   @override
@@ -575,15 +591,43 @@ class _NewTwtState extends State<NewTwt> {
                 imageUrl: user.imageUrl,
               ),
               const SizedBox(width: 16.0),
-              Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: _twtPrompt,
-                  ),
-                  maxLines: 8,
-                  controller: _textController,
+              Flexible(
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: _twtPrompt,
+                      ),
+                      maxLines: 8,
+                      controller: _textController,
+                    ),
+                    SizedBox(
+                      height: 64,
+                      child: Scrollbar(
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.format_bold),
+                              onPressed: () => surroundTextSelection('**'),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.format_italic),
+                              onPressed: () => surroundTextSelection('__'),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.code),
+                              onPressed: () => surroundTextSelection('```'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              )
+              ),
             ],
           ),
         ),
