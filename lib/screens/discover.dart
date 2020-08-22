@@ -9,13 +9,13 @@ import '../models.dart';
 import '../viewmodels.dart';
 import 'newtwt.dart';
 
-class Timeline extends StatefulWidget {
-  static const String routePath = "/";
+class Discover extends StatefulWidget {
+  static const String routePath = '/discover';
   @override
-  _TimelineState createState() => _TimelineState();
+  _DiscoverState createState() => _DiscoverState();
 }
 
-class _TimelineState extends State<Timeline> {
+class _DiscoverState extends State<Discover> {
   @override
   void initState() {
     super.initState();
@@ -24,7 +24,7 @@ class _TimelineState extends State<Timeline> {
 
   void _page() async {
     try {
-      context.read<TimelineViewModel>().gotoNextPage();
+      context.read<DiscoverViewModel>().gotoNextPage();
     } on http.ClientException catch (e) {
       Scaffold.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -33,10 +33,10 @@ class _TimelineState extends State<Timeline> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: AppDrawer(activatedRoute: Timeline.routePath),
+      drawer: AppDrawer(activatedRoute: Discover.routePath),
       appBar: AppBar(
         textTheme: Theme.of(context).textTheme,
-        title: const Text('Timeline'),
+        title: const Text('Discover'),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       floatingActionButton: Builder(
@@ -50,22 +50,22 @@ class _TimelineState extends State<Timeline> {
                   ),
                 ) ??
                 false) {
-              context.read<TimelineViewModel>().fetchNewPost();
+              context.read<DiscoverViewModel>().fetchNewPost();
             }
           },
         ),
       ),
-      body: Consumer2<TimelineViewModel, User>(
-        builder: (context, timelineViewModel, user, _) {
-          if (timelineViewModel.isLoading) {
+      body: Consumer2<DiscoverViewModel, User>(
+        builder: (context, discoverViewModel, user, _) {
+          if (discoverViewModel.isLoading) {
             return Center(
               child: CircularProgressIndicator(),
             );
           }
-          final twts = timelineViewModel.twts;
+          final twts = discoverViewModel.twts;
 
           return RefreshIndicator(
-            onRefresh: timelineViewModel.refreshPost,
+            onRefresh: discoverViewModel.refreshPost,
             child: ListView.separated(
               padding: const EdgeInsets.only(bottom: 16),
               separatorBuilder: (context, index) {
@@ -115,7 +115,7 @@ class _TimelineState extends State<Timeline> {
                                     ),
                                   ) ??
                                   false) {
-                                timelineViewModel.fetchNewPost();
+                                discoverViewModel.fetchNewPost();
                               }
                             },
                             child: Padding(

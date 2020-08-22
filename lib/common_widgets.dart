@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:twtxt_flutter/viewmodels.dart';
 
 import 'models.dart';
+import 'screens/discover.dart';
+import 'screens/timeline.dart';
 
 class Avatar extends StatelessWidget {
   final String imageUrl;
@@ -46,6 +48,70 @@ class AuthWidgetBuilder extends StatelessWidget {
         }
         return builder(context, snapshot);
       },
+    );
+  }
+}
+
+class AppDrawer extends StatelessWidget {
+  final String activatedRoute;
+
+  const AppDrawer({Key key, @required this.activatedRoute}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final highlightColor = Theme.of(context).highlightColor;
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          Consumer<User>(builder: (context, user, _) {
+            return UserAccountsDrawerHeader(
+              currentAccountPicture: CircleAvatar(
+                radius: 35,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                child: Avatar(
+                  imageUrl: user.imageUrl,
+                  radius: 34,
+                ),
+              ),
+              accountName: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(user.username),
+                  Text(user.podURL.authority),
+                ],
+              ),
+              accountEmail: null,
+            );
+          }),
+          ListTile(
+            title: Text('Discover'),
+            tileColor:
+                activatedRoute == Discover.routePath ? highlightColor : null,
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed(Discover.routePath);
+            },
+          ),
+          ListTile(
+            tileColor:
+                activatedRoute == Timeline.routePath ? highlightColor : null,
+            title: Text('Timeline'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed(Timeline.routePath);
+            },
+          ),
+          ListTile(
+            title: Text('Log Out'),
+            trailing: Icon(Icons.logout),
+            onTap: () {
+              Navigator.of(context).pop();
+              context.watch<AuthViewModel>().logout();
+            },
+          )
+        ],
+      ),
     );
   }
 }

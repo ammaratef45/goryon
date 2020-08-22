@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:twtxt_flutter/screens/discover.dart';
 
 import '../api.dart';
 import '../models.dart';
@@ -41,24 +42,50 @@ class _AuthWidgetState extends State<AuthWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<Api>(
-      builder: (context, api, child) {
-        if (widget.snapshot.connectionState == ConnectionState.active) {
-          return widget.snapshot.hasData
-              ? ChangeNotifierProvider(
-                  create: (_) => TimelineViewModel(api),
-                  child: child,
-                )
-              : Login();
+    if (widget.snapshot.connectionState == ConnectionState.active) {
+      return widget.snapshot.hasData ? Home() : Login();
+    }
+
+    return Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+}
+
+class Home extends StatefulWidget {
+  @override
+  _HomeState createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  @override
+  Widget build(BuildContext context) {
+    final _api = context.watch<Api>();
+    return Navigator(
+      initialRoute: Timeline.routePath,
+      onGenerateRoute: (RouteSettings settings) {
+        WidgetBuilder builder;
+        switch (settings.name) {
+          case Timeline.routePath:
+            builder = (_) => ChangeNotifierProvider(
+                  create: (_) => TimelineViewModel(_api),
+                  child: Timeline(),
+                );
+            break;
+          case Discover.routePath:
+            builder = (_) => ChangeNotifierProvider(
+                  create: (_) => DiscoverViewModel(_api),
+                  child: Discover(),
+                );
+            break;
+          default:
+            throw Exception('Invalid route: ${settings.name}');
         }
 
-        return Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
+        return MaterialPageRoute(builder: builder, settings: settings);
       },
-      child: Timeline(),
     );
   }
 }

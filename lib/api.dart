@@ -53,7 +53,8 @@ class Api {
     return user;
   }
 
-  Future<void> register(String uri, String username, String password, String email) async {
+  Future<void> register(
+      String uri, String username, String password, String email) async {
     final response = await _httpClient.post(
       Uri.parse(uri).replace(path: "/api/v1/register"),
       body: jsonEncode({
@@ -81,7 +82,26 @@ class Api {
     );
 
     if (response.statusCode >= 400) {
-      throw http.ClientException('Failed to get timeline');
+      throw http.ClientException('Failed to get posts');
+    }
+
+    return TimelineResponse.fromJson(
+        jsonDecode(utf8.decode(response.bodyBytes)));
+  }
+
+  Future<TimelineResponse> discover(int page) async {
+    final _user = await user;
+    final response = await _httpClient.post(
+      _user.podURL.replace(path: "/api/v1/discover"),
+      body: jsonEncode({'page': page}),
+      headers: {
+        'Token': _user.token,
+        HttpHeaders.contentTypeHeader: ContentType.json.toString(),
+      },
+    );
+
+    if (response.statusCode >= 400) {
+      throw http.ClientException('Failed to get posts');
     }
 
     return TimelineResponse.fromJson(
