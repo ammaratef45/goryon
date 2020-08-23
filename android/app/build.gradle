@@ -48,7 +48,7 @@ android {
     defaultConfig {
         applicationId "com.jointwtxt.goryon"
         minSdkVersion 18
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
