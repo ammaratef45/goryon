@@ -9,7 +9,7 @@ if (localPropertiesFile.exists()) {
 def flutterRoot = localProperties.getProperty('flutter.sdk')
 
 def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file('../../keys/android/key.properties')
+def keystorePropertiesFile = rootProject.file('../keys/android/key.properties')
 if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.withReader('UTF-8') { reader ->
         keystoreProperties.load(reader)
@@ -57,7 +57,7 @@ android {
         release {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
-            storeFile file('../../keys/android/upload-keystore.jks')
+            storeFile rootProject.file('../keys/android/upload-keystore.jks')
             storePassword keystoreProperties['storePassword']
         }
     }
