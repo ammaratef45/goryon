@@ -20,15 +20,40 @@ platform :android do
   version_info = flutter_version()
   version_code = version_info["version_code"]
 
-  desc "Deploy a new version to the Google Play to Alpha track"
-  lane :deploy_alpha do
+  desc "Submit to internal track in Google Play Store"
+  lane :internal do
     sh("flutter", "build", "appbundle")
     upload_to_play_store(
-        track: 'alpha',
-        version_code: version_code,
-        track_promote_to: 'production',
-        skip_upload_screenshots: true,
-        skip_upload_images: true
-        )
+      track: 'internal',
+      aab: '../build/app/outputs/bundle/release/app-release.aab',
+      skip_upload_screenshots: true,
+      skip_upload_images: true
+      )
+  end
+
+  desc "promote to alpha track in Google Play Store"
+  lane :alpha do
+    sh("flutter", "build", "appbundle")
+    upload_to_play_store(
+      track: 'internal',
+      version_code: flutter_version(),
+      track_promote_to: 'alpha',
+      skip_upload_aab: true,
+      skip_upload_screenshots: true,
+      skip_upload_images: true
+    )
+  end
+
+  desc "promote to production track in Google Play Store"
+  lane :production do
+    sh("flutter", "build", "appbundle")
+    upload_to_play_store(
+      track: 'alpha',
+      version_code: flutter_version(),
+      track_promote_to: 'production',
+      skip_upload_aab: true,
+      skip_upload_screenshots: true,
+      skip_upload_images: true
+    )
   end
 end
