@@ -17,10 +17,18 @@ default_platform(:android)
 
 platform :android do
   desc "Runs all the tests"
+  version_info = flutter_version()
+  version_code = version_info["version_code"]
 
-  desc "Deploy a new version to the Google Play"
-  lane :deploy do
+  desc "Deploy a new version to the Google Play to Alpha track"
+  lane :deploy_alpha do
     sh("flutter", "build", "appbundle")
-    # upload_to_play_store
+    upload_to_play_store(
+        track: 'alpha',
+        version_code: version_code,
+        track_promote_to: 'production',
+        skip_upload_screenshots: true,
+        skip_upload_images: true
+        )
   end
 end

@@ -46,3 +46,6 @@ app.*.map.json
 
 # Deploy keys
 keys/
+
+# Fastlane files
+android/fastlane/report.xml
