@@ -22,12 +22,8 @@ jobs:
           ruby-version: '2.x'
       - uses: subosito/flutter-action@v1
         with:
-          flutter-version: '1.12.13+hotfix.5'
-          channel: 'stable'
-      - name: upgrade flutter
-        run: |
-          flutter channel dev
-          flutter upgrade
+          flutter-versionn: '1.21.0-7.0.pre'
+          channel: 'dev'
       - name: install gem packages
         run: |
           cd android
@@ -37,7 +33,7 @@ jobs:
           bundle exec fastlane update_plugins
       - name: build apk and app bundle package
         env:
-          ANDROID_SIGN_PWD: ${{ secrets.ANDROID_SIGN_PWD }}
+          ANDROID_KEY_PWD: ${{ secrets.ANDROID_KEY_PWD }}
           ANDROID_KEY_STORE_PWD: ${{ secrets.ANDROID_KEY_STORE_PWD }}
           RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
           RELEASE_KEYSTORE_PASSPHRASE: ${{ secrets.RELEASE_KEYSTORE_PASSPHRASE }}
