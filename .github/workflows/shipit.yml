@@ -1,9 +1,6 @@
 name: shipit
 on:
   push:
-    branches:
-      - "master"
-      - "actions/release_android__*"
     paths:
       - "goryon/pubspec.yaml"
       - "goryon/android/fastlane/**/*"
