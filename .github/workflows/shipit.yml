@@ -32,20 +32,20 @@ jobs:
           flutter channel dev
           flutter upgrade
       - name: install gem packages
-          run: |
-            cd goryon/android
-            gem install bundler:1.17.3
-            bundle install
-            bundle exec fastlane install_plugins
-            bundle exec fastlane update_plugins
+        run: |
+          cd goryon/android
+          gem install bundler:1.17.3
+          bundle install
+          bundle exec fastlane install_plugins
+          bundle exec fastlane update_plugins
       - name: build apk and app bundle package
-          env:
-            ANDROID_SIGN_PWD: ${{ secrets.ANDROID_SIGN_PWD }}
-            ANDROID_KEY_STORE_PWD: ${{ secrets.ANDROID_KEY_STORE_PWD }}
-            RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
-            RELEASE_KEYSTORE_PASSPHRASE: ${{ secrets.RELEASE_KEYSTORE_PASSPHRASE }}
-            RELEASE_SERVICE_ACCOUNT_KEYSTORE: ${{ secrets.RELEASE_SERVICE_ACCOUNT_KEYSTORE }}
-          run: |
-            ./scripts/setenv.sh
-            flutter pub get
-            flutter build appbundle
+        env:
+          ANDROID_SIGN_PWD: ${{ secrets.ANDROID_SIGN_PWD }}
+          ANDROID_KEY_STORE_PWD: ${{ secrets.ANDROID_KEY_STORE_PWD }}
+          RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
+          RELEASE_KEYSTORE_PASSPHRASE: ${{ secrets.RELEASE_KEYSTORE_PASSPHRASE }}
+          RELEASE_SERVICE_ACCOUNT_KEYSTORE: ${{ secrets.RELEASE_SERVICE_ACCOUNT_KEYSTORE }}
+        run: |
+          ./scripts/setenv.sh
+          flutter pub get
+          flutter build appbundle
