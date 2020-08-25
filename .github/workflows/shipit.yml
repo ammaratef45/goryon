@@ -1,6 +1,9 @@
 name: shipit
 on:
   push:
+    branches:
+      - "master"
+      - "actions/release-android__*"
     paths:
       - "goryon/pubspec.yaml"
       - "goryon/android/fastlane/**/*"
@@ -42,3 +45,45 @@ jobs:
           ./scripts/setenv.sh
           flutter pub get
           flutter build appbundle
+      - name: upload app to Google Play Store
+        env:
+          ANDROID_KEY_PWD: ${{ secrets.ANDROID_KEY_PWD }}
+          ANDROID_KEY_STORE_PWD: ${{ secrets.ANDROID_KEY_STORE_PWD }}
+          RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
+          RELEASE_KEYSTORE_PASSPHRASE: ${{ secrets.RELEASE_KEYSTORE_PASSPHRASE }}
+          RELEASE_SERVICE_ACCOUNT_KEYSTORE: ${{ secrets.RELEASE_SERVICE_ACCOUNT_KEYSTORE }}
+        run: |
+          ./scripts/setenv.sh
+          bundle exec fastlane internal
+      - name: promote to alpha
+        env:
+          ANDROID_KEY_PWD: ${{ secrets.ANDROID_KEY_PWD }}
+          ANDROID_KEY_STORE_PWD: ${{ secrets.ANDROID_KEY_STORE_PWD }}
+          RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
+          RELEASE_KEYSTORE_PASSPHRASE: ${{ secrets.RELEASE_KEYSTORE_PASSPHRASE }}
+          RELEASE_SERVICE_ACCOUNT_KEYSTORE: ${{ secrets.RELEASE_SERVICE_ACCOUNT_KEYSTORE }}
+        run: |
+          ./scripts/setenv.sh
+          bundle exec fastlane alpha
+      - name: promote to beta
+        if: contains(github.event_name,'release')
+        env:
+          ANDROID_KEY_PWD: ${{ secrets.ANDROID_KEY_PWD }}
+          ANDROID_KEY_STORE_PWD: ${{ secrets.ANDROID_KEY_STORE_PWD }}
+          RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
+          RELEASE_KEYSTORE_PASSPHRASE: ${{ secrets.RELEASE_KEYSTORE_PASSPHRASE }}
+          RELEASE_SERVICE_ACCOUNT_KEYSTORE: ${{ secrets.RELEASE_SERVICE_ACCOUNT_KEYSTORE }}
+        run: |
+          ./scripts/setenv.sh
+          bundle exec fastlane beta
+      - name: promote to production
+        if: contains(github.event_name,'release')&&(!github.event.release.prerelease)
+        env:
+          ANDROID_KEY_PWD: ${{ secrets.ANDROID_KEY_PWD }}
+          ANDROID_KEY_STORE_PWD: ${{ secrets.ANDROID_KEY_STORE_PWD }}
+          RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
+          RELEASE_KEYSTORE_PASSPHRASE: ${{ secrets.RELEASE_KEYSTORE_PASSPHRASE }}
+          RELEASE_SERVICE_ACCOUNT_KEYSTORE: ${{ secrets.RELEASE_SERVICE_ACCOUNT_KEYSTORE }}
+        run: |
+          ./scripts/setenv.sh
+          bundle exec fastlane production
