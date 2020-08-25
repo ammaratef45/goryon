@@ -27,14 +27,14 @@ jobs:
         with:
           flutter-version: '1.21.0-7.0.pre'
           channel: 'dev'
-      - name: install gem packages
+      - name: Install gem packages
         run: |
           cd android
           gem install bundler:1.17.3
           bundle install
           bundle exec fastlane install_plugins
           bundle exec fastlane update_plugins
-      - name: build apk and app bundle package
+      - name: Build apk and app bundle package
         env:
           ANDROID_KEY_PWD: ${{ secrets.ANDROID_KEY_PWD }}
           ANDROID_KEY_STORE_PWD: ${{ secrets.ANDROID_KEY_STORE_PWD }}
@@ -45,7 +45,7 @@ jobs:
           ./scripts/setenv.sh
           flutter pub get
           flutter build appbundle
-      - name: upload app to Google Play Store
+      - name: Upload app to Google Play Store
         env:
           ANDROID_KEY_PWD: ${{ secrets.ANDROID_KEY_PWD }}
           ANDROID_KEY_STORE_PWD: ${{ secrets.ANDROID_KEY_STORE_PWD }}
@@ -56,7 +56,7 @@ jobs:
           ./scripts/setenv.sh
           cd android/
           bundle exec fastlane internal
-      - name: promote to alpha
+      - name: Promote to alpha
         env:
           ANDROID_KEY_PWD: ${{ secrets.ANDROID_KEY_PWD }}
           ANDROID_KEY_STORE_PWD: ${{ secrets.ANDROID_KEY_STORE_PWD }}
@@ -67,7 +67,7 @@ jobs:
           ./scripts/setenv.sh
           cd android/
           bundle exec fastlane alpha
-      - name: promote to beta
+      - name: Promote to beta
         if: contains(github.event_name,'release')
         env:
           ANDROID_KEY_PWD: ${{ secrets.ANDROID_KEY_PWD }}
@@ -79,7 +79,7 @@ jobs:
           ./scripts/setenv.sh
           cd android/
           bundle exec fastlane beta
-      - name: promote to production
+      - name: Promote to production
         if: contains(github.event_name,'release')&&(!github.event.release.prerelease)
         env:
           ANDROID_KEY_PWD: ${{ secrets.ANDROID_KEY_PWD }}
