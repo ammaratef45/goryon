@@ -4,6 +4,11 @@ on:
     branches:
       - "master"
       - "actions/release-android__*"
+    paths:
+      - "pubspec.yaml"
+      - "android/**"
+      - "lib/**"
+      - ".github/workflows/shipit.yml"
 jobs:
   release-android:
     name: release android app
