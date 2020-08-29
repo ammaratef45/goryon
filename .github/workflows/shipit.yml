@@ -4,13 +4,6 @@ on:
     branches:
       - "master"
       - "actions/release-android__*"
-    paths:
-      - "pubspec.yaml"
-      - "android/fastlane/**/*"
-      - "android/fastlane/Fastfile"
-      - ".github/workflows/shipit.yml"
-      - "android/Gemfile"
-      - "android/Gemfile.lock"
 jobs:
   release-android:
     name: release android app
