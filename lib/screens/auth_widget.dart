@@ -7,6 +7,7 @@ import '../api.dart';
 import '../models.dart';
 import '../viewmodels.dart';
 import 'discover.dart';
+import 'follow.dart';
 import 'login.dart';
 import 'timeline.dart';
 
@@ -60,32 +61,43 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  final navigator = GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
     final _api = context.watch<Api>();
-    return Navigator(
-      initialRoute: Timeline.routePath,
-      onGenerateRoute: (RouteSettings settings) {
-        WidgetBuilder builder;
-        switch (settings.name) {
-          case Timeline.routePath:
-            builder = (_) => ChangeNotifierProvider(
-                  create: (_) => TimelineViewModel(_api),
-                  child: Timeline(),
-                );
-            break;
-          case Discover.routePath:
-            builder = (_) => ChangeNotifierProvider(
-                  create: (_) => DiscoverViewModel(_api),
-                  child: Discover(),
-                );
-            break;
-          default:
-            throw Exception('Invalid route: ${settings.name}');
-        }
-
-        return MaterialPageRoute(builder: builder, settings: settings);
+    return WillPopScope(
+      onWillPop: () async {
+        return !await navigator.currentState.maybePop();
       },
+      child: Navigator(
+        key: navigator,
+        initialRoute: Timeline.routePath,
+        onGenerateRoute: (RouteSettings settings) {
+          WidgetBuilder builder;
+          switch (settings.name) {
+            case Timeline.routePath:
+              builder = (_) => ChangeNotifierProvider(
+                    create: (_) => TimelineViewModel(_api),
+                    child: Timeline(),
+                  );
+              break;
+            case Discover.routePath:
+              builder = (_) => ChangeNotifierProvider(
+                    create: (_) => DiscoverViewModel(_api),
+                    child: Discover(),
+                  );
+              break;
+            case Follow.routePath:
+              builder = (_) => Follow();
+              break;
+            default:
+              throw Exception('Invalid route: ${settings.name}');
+          }
+
+          return MaterialPageRoute(builder: builder, settings: settings);
+        },
+      ),
     );
   }
 }
