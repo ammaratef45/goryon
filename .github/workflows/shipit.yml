@@ -1,5 +1,10 @@
 name: shipit
 on:
+  release:	
+    types:	
+      - "published"	
+      - "edited"
+      - "prereleased"
   push:
     branches:
       - "master"
