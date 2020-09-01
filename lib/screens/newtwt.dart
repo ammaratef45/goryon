@@ -1,12 +1,16 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:goryon/viewmodels.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
 import '../api.dart';
 import '../common_widgets.dart';
 import '../models.dart';
 import '../strings.dart';
+import '../form_validators.dart';
 
 class NewTwt extends StatefulWidget {
   const NewTwt({Key key, this.initialText = ''}) : super(key: key);
@@ -19,8 +23,19 @@ class NewTwt extends StatefulWidget {
 
 class _NewTwtState extends State<NewTwt> {
   final _random = Random();
-  bool _canSubmit = false;
+  final _formKey = GlobalKey<FormState>();
+  final _scrollbarController = ScrollController();
+  final _iconButtonLoading = const SizedBox(
+    height: 16,
+    width: 16,
+    child: CircularProgressIndicator(
+      strokeWidth: 2,
+    ),
+  );
+
   Future _savePostFuture;
+  Future _uploadImageFromGalleryFuture;
+  Future _uploadImageFromCameraFuture;
   TextEditingController _textController;
   String _twtPrompt;
 
@@ -30,20 +45,32 @@ class _NewTwtState extends State<NewTwt> {
     _textController = TextEditingController(text: widget.initialText);
     _textController.buildTextSpan();
     _twtPrompt = _getTwtPrompt();
-    _textController.addListener(() {
-      setState(() {
-        _canSubmit = _textController.text.trim().length > 0;
-      });
-    });
   }
 
-  void submitPost() {
+  void _submitPost() {
+    if (!_formKey.currentState.validate()) return;
     setState(() {
       _savePostFuture = context
           .read<Api>()
           .savePost(_textController.text)
           .then((value) => Navigator.pop(context, true));
     });
+  }
+
+  Future<void> _uploadImage(ImageSource imageSource) async {
+    try {
+      await context
+          .read<NewTwtViewModel>()
+          .prompUserForImageAndUpload(imageSource)
+          .then((imageURL) {
+        if (imageURL == null) return;
+        _textController.value = _textController.value.copyWith(
+          text: _textController.value.text + '![]($imageURL)',
+        );
+      });
+    } on http.ClientException catch (e) {
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   String _getTwtPrompt() {
@@ -79,15 +106,15 @@ class _NewTwtState extends State<NewTwt> {
               label = SizedBox(
                 height: 16,
                 width: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                ),
               );
 
             return FloatingActionButton.extended(
               label: label,
-              elevation: _canSubmit ? 2 : 0,
-              backgroundColor:
-                  _canSubmit ? null : Theme.of(context).disabledColor,
-              onPressed: _canSubmit ? submitPost : null,
+              onPressed: _submitPost,
             );
           }),
       appBar: AppBar(),
@@ -106,16 +133,23 @@ class _NewTwtState extends State<NewTwt> {
                   mainAxisSize: MainAxisSize.max,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: _twtPrompt,
+                    Form(
+                      key: _formKey,
+                      child: TextFormField(
+                        validator: FormValidators.requiredField,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: _twtPrompt,
+                        ),
+                        maxLines: 8,
+                        controller: _textController,
                       ),
-                      maxLines: 8,
-                      controller: _textController,
                     ),
                     SizedBox(
-                      height: 32,
+                      height: 64,
                       child: Scrollbar(
+                        controller: _scrollbarController,
+                        isAlwaysShown: true,
                         child: ListView(
                           scrollDirection: Axis.horizontal,
                           children: [
@@ -166,6 +200,58 @@ class _NewTwtState extends State<NewTwt> {
                                 '![](https://',
                                 ')',
                               ),
+                            ),
+                            FutureBuilder(
+                              future: _uploadImageFromGalleryFuture,
+                              builder: (context, snapshot) {
+                                final isLoading = snapshot.connectionState ==
+                                    ConnectionState.waiting;
+
+                                void _onPressed() {
+                                  setState(
+                                    () {
+                                      _uploadImageFromGalleryFuture =
+                                          _uploadImage(
+                                        ImageSource.gallery,
+                                      );
+                                    },
+                                  );
+                                }
+
+                                return IconButton(
+                                  tooltip: 'Upload image from gallery',
+                                  icon: isLoading
+                                      ? _iconButtonLoading
+                                      : Icon(Icons.photo_library),
+                                  onPressed: isLoading ? null : _onPressed,
+                                );
+                              },
+                            ),
+                            FutureBuilder(
+                              future: _uploadImageFromCameraFuture,
+                              builder: (context, snapshot) {
+                                final isLoading = snapshot.connectionState ==
+                                    ConnectionState.waiting;
+
+                                void _onPressed() {
+                                  setState(
+                                    () {
+                                      _uploadImageFromCameraFuture =
+                                          _uploadImage(
+                                        ImageSource.camera,
+                                      );
+                                    },
+                                  );
+                                }
+
+                                return IconButton(
+                                  tooltip: 'Upload image from camera',
+                                  icon: isLoading
+                                      ? _iconButtonLoading
+                                      : Icon(Icons.camera_alt),
+                                  onPressed: isLoading ? null : _onPressed,
+                                );
+                              },
                             )
                           ],
                         ),
