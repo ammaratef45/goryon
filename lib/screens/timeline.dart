@@ -24,6 +24,7 @@ class _TimelineState extends State<Timeline> {
       context.read<TimelineViewModel>().gotoNextPage();
     } on http.ClientException catch (e) {
       Scaffold.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      rethrow;
     }
   }
 

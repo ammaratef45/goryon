@@ -5,21 +5,49 @@ part 'models.g.dart';
 
 @JsonSerializable()
 class User {
-  final String username;
-  final Uri podURL;
+  final Profile profile;
   final String token;
+  final Twter twter;
 
   User({
-    @required this.username,
-    @required this.podURL,
     @required this.token,
+    @required this.profile,
+    @required this.twter,
   });
-
-  String get imageUrl =>
-      podURL.replace(path: "/user/$username/avatar").toString();
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
   Map<String, dynamic> toJson() => _$UserToJson(this);
+
+  User copyWith({
+    Profile profile,
+    String token,
+    Twter twter,
+  }) {
+    return User(
+      profile: profile ?? this.profile,
+      token: token ?? this.token,
+      twter: twter ?? this.twter,
+    );
+  }
+
+  String getNickFromTwtxtURL(String url) {
+    final uri = Uri.parse(url);
+
+    // Only allow  viewing the profile for internal users for now
+    if (profile.uri.authority != uri.authority) {
+      return null;
+    }
+
+    if (uri.pathSegments.length != 3) {
+      return null;
+    }
+
+    if (uri.pathSegments[0] == "user" && uri.pathSegments[2] == "twtxt.txt") {
+      return uri.pathSegments[1];
+    }
+
+    return null;
+  }
 }
 
 @JsonSerializable()
@@ -59,6 +87,10 @@ class Twter {
   final Uri avatar;
 
   Twter({this.nick, this.uri, this.avatar});
+
+  bool isPodMember(Uri podUri) {
+    return podUri.authority == uri.authority;
+  }
 
   factory Twter.fromJson(Map<String, dynamic> json) => _$TwterFromJson(json);
   Map<String, dynamic> toJson() => _$TwterToJson(this);
@@ -143,4 +175,78 @@ class PostRequest {
   factory PostRequest.fromJson(Map<String, dynamic> json) =>
       _$PostRequestFromJson(json);
   Map<String, dynamic> toJson() => _$PostRequestToJson(this);
+}
+
+@JsonSerializable()
+class ProfileResponse {
+  final Profile profile;
+  final List<Link> links;
+  final List<Alternative> alternatives;
+  final Twter twter;
+
+  ProfileResponse(this.profile, this.links, this.alternatives, this.twter);
+
+  factory ProfileResponse.fromJson(Map<String, dynamic> json) =>
+      _$ProfileResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$ProfileResponseToJson(this);
+}
+
+@JsonSerializable()
+class Profile {
+  @JsonKey(name: 'Type')
+  final String type;
+  @JsonKey(name: 'Username')
+  final String username;
+  @JsonKey(name: 'URL')
+  final Uri uri;
+  @JsonKey(name: 'Followers')
+  final Map<String, String> followers;
+  @JsonKey(name: 'Following')
+  final Map<String, String> following;
+  @JsonKey(name: 'Tagline', defaultValue: '')
+  final String tagline;
+
+  Profile(
+    this.type,
+    this.username,
+    this.uri,
+    this.followers,
+    this.following,
+    this.tagline,
+  );
+
+  bool isFollowing(String uri) {
+    return following.containsValue(uri);
+  }
+
+  factory Profile.fromJson(Map<String, dynamic> json) =>
+      _$ProfileFromJson(json);
+  Map<String, dynamic> toJson() => _$ProfileToJson(this);
+}
+
+@JsonSerializable()
+class Link {
+  @JsonKey(name: 'Href')
+  final String href;
+  @JsonKey(name: 'Rel')
+  final String rel;
+
+  Link(this.href, this.rel);
+  factory Link.fromJson(Map<String, dynamic> json) => _$LinkFromJson(json);
+  Map<String, dynamic> toJson() => _$LinkToJson(this);
+}
+
+@JsonSerializable()
+class Alternative {
+  @JsonKey(name: 'Type')
+  final String type;
+  @JsonKey(name: 'Title')
+  final String title;
+  @JsonKey(name: 'URL')
+  final String url;
+
+  Alternative(this.type, this.title, this.url);
+  factory Alternative.fromJson(Map<String, dynamic> json) =>
+      _$AlternativeFromJson(json);
+  Map<String, dynamic> toJson() => _$AlternativeToJson(this);
 }

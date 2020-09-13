@@ -8,16 +8,20 @@ part of 'models.dart';
 
 User _$UserFromJson(Map<String, dynamic> json) {
   return User(
-    username: json['username'] as String,
-    podURL: json['podURL'] == null ? null : Uri.parse(json['podURL'] as String),
     token: json['token'] as String,
+    profile: json['profile'] == null
+        ? null
+        : Profile.fromJson(json['profile'] as Map<String, dynamic>),
+    twter: json['twter'] == null
+        ? null
+        : Twter.fromJson(json['twter'] as Map<String, dynamic>),
   );
 }
 
 Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
-      'username': instance.username,
-      'podURL': instance.podURL?.toString(),
+      'profile': instance.profile,
       'token': instance.token,
+      'twter': instance.twter,
     };
 
 AuthReponse _$AuthReponseFromJson(Map<String, dynamic> json) {
@@ -106,4 +110,82 @@ Map<String, dynamic> _$PostRequestToJson(PostRequest instance) =>
     <String, dynamic>{
       'post_as': instance.postAs,
       'text': instance.text,
+    };
+
+ProfileResponse _$ProfileResponseFromJson(Map<String, dynamic> json) {
+  return ProfileResponse(
+    json['profile'] == null
+        ? null
+        : Profile.fromJson(json['profile'] as Map<String, dynamic>),
+    (json['links'] as List)
+        ?.map(
+            (e) => e == null ? null : Link.fromJson(e as Map<String, dynamic>))
+        ?.toList(),
+    (json['alternatives'] as List)
+        ?.map((e) =>
+            e == null ? null : Alternative.fromJson(e as Map<String, dynamic>))
+        ?.toList(),
+    json['twter'] == null
+        ? null
+        : Twter.fromJson(json['twter'] as Map<String, dynamic>),
+  );
+}
+
+Map<String, dynamic> _$ProfileResponseToJson(ProfileResponse instance) =>
+    <String, dynamic>{
+      'profile': instance.profile,
+      'links': instance.links,
+      'alternatives': instance.alternatives,
+      'twter': instance.twter,
+    };
+
+Profile _$ProfileFromJson(Map<String, dynamic> json) {
+  return Profile(
+    json['Type'] as String,
+    json['Username'] as String,
+    json['URL'] == null ? null : Uri.parse(json['URL'] as String),
+    (json['Followers'] as Map<String, dynamic>)?.map(
+      (k, e) => MapEntry(k, e as String),
+    ),
+    (json['Following'] as Map<String, dynamic>)?.map(
+      (k, e) => MapEntry(k, e as String),
+    ),
+    json['Tagline'] as String ?? '',
+  );
+}
+
+Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
+      'Type': instance.type,
+      'Username': instance.username,
+      'URL': instance.uri?.toString(),
+      'Followers': instance.followers,
+      'Following': instance.following,
+      'Tagline': instance.tagline,
+    };
+
+Link _$LinkFromJson(Map<String, dynamic> json) {
+  return Link(
+    json['Href'] as String,
+    json['Rel'] as String,
+  );
+}
+
+Map<String, dynamic> _$LinkToJson(Link instance) => <String, dynamic>{
+      'Href': instance.href,
+      'Rel': instance.rel,
+    };
+
+Alternative _$AlternativeFromJson(Map<String, dynamic> json) {
+  return Alternative(
+    json['Type'] as String,
+    json['Title'] as String,
+    json['URL'] as String,
+  );
+}
+
+Map<String, dynamic> _$AlternativeToJson(Alternative instance) =>
+    <String, dynamic>{
+      'Type': instance.type,
+      'Title': instance.title,
+      'URL': instance.url,
     };

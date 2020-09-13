@@ -13,7 +13,10 @@ class AuthViewModel {
   final _user = BehaviorSubject<User>();
 
   AuthViewModel(this._api) {
-    _api.user.then(_user.add);
+    _api.loginUsingCachedData().then(_user.add).catchError((_) {
+      _api.clearUserToken();
+      _user.add(null);
+    });
   }
 
   Stream get user => _user.stream;
@@ -24,7 +27,21 @@ class AuthViewModel {
     _user.add(null);
   }
 
-  Future login(String username, String password, String podURL) async {
+  Future<void> unfollow(String nick) async {
+    final user = await _user.first;
+    _api.unfollow(nick);
+    user.profile.following.remove(nick);
+    _user.add(user);
+  }
+
+  Future<void> follow(String nick, String url) async {
+    final user = await _user.first;
+    _api.follow(nick, url);
+    user.profile.following.putIfAbsent(nick, () => url);
+    _user.add(user);
+  }
+
+  Future<void> login(String username, String password, String podURL) async {
     var uri = Uri.parse(podURL);
 
     if (!uri.hasScheme) {
@@ -105,25 +122,17 @@ class TimelineViewModel extends ChangeNotifier {
 class DiscoverViewModel extends ChangeNotifier {
   DiscoverViewModel(this._api) {
     _twts = [];
-    _isEntireListLoading = false;
     _isBottomListLoading = false;
   }
 
   final Api _api;
-  bool _isEntireListLoading;
   bool _isBottomListLoading;
   TimelineResponse _lastTimelineResponse;
   List<Twt> _twts;
 
-  bool get isEntireListLoading => _isEntireListLoading;
   bool get isBottomListLoading => _isBottomListLoading;
 
   List<Twt> get twts => _twts;
-
-  set isEntireListLoading(bool isLoading) {
-    _isEntireListLoading = isLoading;
-    notifyListeners();
-  }
 
   set isBottomListLoading(bool isLoading) {
     _isBottomListLoading = isLoading;
@@ -136,18 +145,12 @@ class DiscoverViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void fetchNewPost() async {
-    isEntireListLoading = true;
-
-    try {
-      _lastTimelineResponse = await _api.discover(0);
-      _twts = _lastTimelineResponse.twts;
-    } finally {
-      isEntireListLoading = false;
-    }
+  Future<void> fetchNewPost() async {
+    _lastTimelineResponse = await _api.discover(0);
+    _twts = _lastTimelineResponse.twts;
   }
 
-  void gotoNextPage() async {
+  Future<void> gotoNextPage() async {
     if (_lastTimelineResponse.pagerResponse.currentPage ==
         _lastTimelineResponse.pagerResponse.maxPages) {
       return;
@@ -177,5 +180,37 @@ class NewTwtViewModel {
     }
 
     return _api.uploadImage(pickedFile.path);
+  }
+}
+
+class ProfileViewModel extends ChangeNotifier {
+  final Api _api;
+  ProfileResponse _profileResponse;
+
+  Profile get profile => _profileResponse.profile;
+  Twter get twter => _profileResponse.twter;
+  bool get hasProfile => _profileResponse?.profile != null;
+
+  Map<String, String> get following => _profileResponse?.profile?.following;
+  int get followingCount => following?.length ?? 0;
+  bool get hasFollowing => followingCount > 0;
+
+  Map<String, String> get followers => _profileResponse?.profile?.followers;
+  int get followerCount => followers?.length ?? 0;
+  bool get hasFollowers => followerCount > 0;
+
+  set profileResponse(ProfileResponse profileResponse) {
+    _profileResponse = profileResponse;
+    notifyListeners();
+  }
+
+  ProfileViewModel(this._api);
+
+  Future<void> fetchProfile(String name, [String url]) async {
+    if (url != null) {
+      profileResponse = await _api.getExternalProfile(name, url);
+      return;
+    }
+    profileResponse = await _api.getProfile(name);
   }
 }

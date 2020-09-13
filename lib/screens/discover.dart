@@ -13,15 +13,16 @@ class Discover extends StatefulWidget {
 }
 
 class _DiscoverState extends State<Discover> {
+  Future _fetchNewPostFuture;
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => _fetchNewPost());
+    _fetchNewPost();
   }
 
   void _page() async {
     try {
-      context.read<DiscoverViewModel>().gotoNextPage();
+      await context.read<DiscoverViewModel>().gotoNextPage();
     } on http.ClientException catch (e) {
       Scaffold.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
@@ -29,12 +30,19 @@ class _DiscoverState extends State<Discover> {
     }
   }
 
-  void _fetchNewPost() async {
-    try {
-      context.read<DiscoverViewModel>().fetchNewPost();
-    } on http.ClientException catch (e) {
-      Scaffold.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+  void _fetchNewPost() {
+    Future<void> _fetch() async {
+      try {
+        await context.read<DiscoverViewModel>().fetchNewPost();
+      } on http.ClientException catch (e) {
+        Scaffold.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+        rethrow;
+      }
     }
+
+    setState(() {
+      _fetchNewPostFuture = _fetch();
+    });
   }
 
   @override
@@ -57,26 +65,31 @@ class _DiscoverState extends State<Discover> {
                   ),
                 ) ??
                 false) {
-              context.read<DiscoverViewModel>().fetchNewPost();
+              _fetchNewPost();
             }
           },
         ),
       ),
-      body: Consumer<DiscoverViewModel>(
-        builder: (context, discoverViewModel, _) {
-          if (discoverViewModel.isEntireListLoading) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: discoverViewModel.refreshPost,
-            child: PostList(
-              isBottomListLoading: discoverViewModel.isBottomListLoading,
-              gotoNextPage: _page,
-              fetchNewPost: discoverViewModel.fetchNewPost,
-              twts: discoverViewModel.twts,
-            ),
+      body: FutureBuilder(
+        future: _fetchNewPostFuture,
+        builder: (context, snapshot) {
+          return Consumer<DiscoverViewModel>(
+            builder: (context, discoverViewModel, _) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+              return RefreshIndicator(
+                onRefresh: discoverViewModel.refreshPost,
+                child: PostList(
+                  isBottomListLoading: discoverViewModel.isBottomListLoading,
+                  gotoNextPage: _page,
+                  fetchNewPost: _fetchNewPost,
+                  twts: discoverViewModel.twts,
+                ),
+              );
+            },
           );
         },
       ),

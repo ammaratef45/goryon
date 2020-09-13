@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -5,15 +7,22 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'viewmodels.dart';
+import 'package:goryon/screens/profile.dart';
+
+import 'api.dart';
 import 'models.dart';
 import 'screens/discover.dart';
 import 'screens/follow.dart';
 import 'screens/newtwt.dart';
 import 'screens/timeline.dart';
+import 'viewmodels.dart';
 
 class Avatar extends StatelessWidget {
-  const Avatar({Key key, this.imageUrl, this.radius = 20}) : super(key: key);
+  const Avatar({
+    Key key,
+    @required this.imageUrl,
+    this.radius = 20,
+  }) : super(key: key);
 
   final String imageUrl;
   final double radius;
@@ -26,11 +35,59 @@ class Avatar extends StatelessWidget {
 
     return CachedNetworkImage(
       imageUrl: imageUrl,
+      httpHeaders: {HttpHeaders.acceptHeader: "image/webp"},
       imageBuilder: (context, imageProvider) {
         return CircleAvatar(backgroundImage: imageProvider, radius: radius);
       },
       placeholder: (context, url) => CircularProgressIndicator(),
       errorWidget: (context, url, error) => Icon(Icons.error),
+    );
+  }
+}
+
+class SizedSpinner extends StatelessWidget {
+  final double height;
+  final double width;
+
+  const SizedSpinner({Key key, this.height = 16, this.width = 16})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      width: width,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+      ),
+    );
+  }
+}
+
+class AvatarWithBorder extends StatelessWidget {
+  final String imageUrl;
+  final double radius;
+  final Color borderColor;
+  final double borderThickness;
+
+  const AvatarWithBorder({
+    Key key,
+    @required this.imageUrl,
+    this.borderColor,
+    this.borderThickness = 1,
+    this.radius = 20,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor:
+          this.borderColor ?? Theme.of(context).scaffoldBackgroundColor,
+      child: Avatar(
+        imageUrl: imageUrl,
+        radius: radius - this.borderThickness,
+      ),
     );
   }
 }
@@ -92,19 +149,15 @@ class AppDrawer extends StatelessWidget {
             return UserAccountsDrawerHeader(
               margin: const EdgeInsets.all(0),
               // Avatar border
-              currentAccountPicture: CircleAvatar(
+              currentAccountPicture: AvatarWithBorder(
                 radius: avatarRadius,
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                child: Avatar(
-                  imageUrl: user.imageUrl,
-                  radius: avatarRadius - 1,
-                ),
+                imageUrl: user.twter.avatar.toString(),
               ),
               accountName: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(user.username),
-                  Text(user.podURL.authority),
+                  Text(user.profile.username),
+                  Text(user.profile.uri.authority),
                 ],
               ),
               accountEmail: null,
@@ -164,83 +217,121 @@ class _PostListState extends State<PostList> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      controller: _scrollController,
-      slivers: [
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (_, idx) {
-              final twt = widget.twts[idx];
-              return ListTile(
-                isThreeLine: true,
-                leading: Avatar(imageUrl: twt.twter.avatar.toString()),
-                title: Text(
-                  twt.twter.nick,
-                  style: Theme.of(context).textTheme.headline6,
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: MarkdownBody(
-                        styleSheet: MarkdownStyleSheet(textScaleFactor: 1.2),
-                        imageBuilder: (uri, title, alt) => GestureDetector(
-                          onTap: () async {
-                            if (await canLaunch(uri.toString())) {
-                              await launch(uri.toString());
+    return Consumer2<User, Api>(
+      builder: (context, user, api, _) => CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (_, idx) {
+                final twt = widget.twts[idx];
+                final isPodMember = user.getNickFromTwtxtURL(
+                      user.profile.uri.toString(),
+                    ) !=
+                    null;
+
+                return ListTile(
+                  isThreeLine: true,
+                  leading: Avatar(imageUrl: twt.twter.avatar.toString()),
+                  title: GestureDetector(
+                    onTap: isPodMember
+                        ? () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return ChangeNotifierProvider(
+                                    create: (_) => ProfileViewModel(api),
+                                    child: ProfileScreen(
+                                      name: twt.twter.nick,
+                                      uri: twt.twter.uri,
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          }
+                        : null,
+                    child: Text(
+                      twt.twter.nick,
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: MarkdownBody(
+                          styleSheet: MarkdownStyleSheet(),
+                          imageBuilder: (uri, title, alt) => GestureDetector(
+                            onTap: () async {
+                              if (await canLaunch(uri.toString())) {
+                                await launch(uri.toString());
+                                return;
+                              }
+
+                              Scaffold.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to launch image'),
+                                ),
+                              );
+                            },
+                            child: CachedNetworkImage(
+                              httpHeaders: {
+                                HttpHeaders.acceptHeader: "image/webp"
+                              },
+                              imageUrl: uri.toString(),
+                              placeholder: (context, url) =>
+                                  CircularProgressIndicator(),
+                            ),
+                          ),
+                          onTapLink: (link) async {
+                            final nick = user.getNickFromTwtxtURL(link);
+                            if (nick != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return ChangeNotifierProvider(
+                                      create: (_) => ProfileViewModel(api),
+                                      child: ProfileScreen(
+                                        name: nick,
+                                        uri: Uri.parse(link),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (await canLaunch(link)) {
+                              await launch(link);
                               return;
                             }
 
                             Scaffold.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Failed to launch image'),
+                                content: Text('Failed to launch $link'),
                               ),
                             );
                           },
-                          child: CachedNetworkImage(
-                            imageUrl: uri.toString(),
-                            placeholder: (context, url) =>
-                                CircularProgressIndicator(),
-                          ),
+                          data: twt.sanitizedTxt,
+                          extensionSet: md.ExtensionSet.gitHubWeb,
                         ),
-                        onTapLink: (link) async {
-                          final linkUri = Uri.parse(link);
-                          if (linkUri.authority ==
-                              context.read<User>().podURL.authority) {
-                            // TODO: handle app URLs
-                            return;
-                          }
-
-                          if (await canLaunch(link)) {
-                            await launch(link);
-                            return;
-                          }
-
-                          Scaffold.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Failed to launch $link'),
-                            ),
-                          );
-                        },
-                        data: twt.sanitizedTxt,
-                        extensionSet: md.ExtensionSet.gitHubWeb,
                       ),
-                    ),
-                    Divider(height: 0),
-                    ButtonTheme.fromButtonThemeData(
-                      data: Theme.of(context).buttonTheme.copyWith(
-                            minWidth: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                          ),
-                      child: FlatButton(
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          shape: StadiumBorder(),
+                        ),
                         onPressed: () async {
                           if (await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => NewTwt(
                                     initialText: twt.replyText(
-                                      context.read<User>().username,
+                                      user.profile.username,
                                     ),
                                   ),
                                 ),
@@ -254,25 +345,25 @@ class _PostListState extends State<PostList> {
                           style: Theme.of(context).textTheme.button,
                         ),
                       ),
-                    ),
-                    Divider(height: 0),
-                  ],
-                ),
-              );
-            },
-            childCount: widget.twts.length,
-          ),
-        ),
-        if (widget.isBottomListLoading)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 64.0),
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
+                      Divider(height: 0),
+                    ],
+                  ),
+                );
+              },
+              childCount: widget.twts.length,
             ),
-          )
-      ],
+          ),
+          if (widget.isBottomListLoading)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 64.0),
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            )
+        ],
+      ),
     );
   }
 }

@@ -25,13 +25,6 @@ class _NewTwtState extends State<NewTwt> {
   final _random = Random();
   final _formKey = GlobalKey<FormState>();
   final _scrollbarController = ScrollController();
-  final _iconButtonLoading = const SizedBox(
-    height: 16,
-    width: 16,
-    child: CircularProgressIndicator(
-      strokeWidth: 2,
-    ),
-  );
 
   Future _savePostFuture;
   Future _uploadImageFromGalleryFuture;
@@ -125,7 +118,7 @@ class _NewTwtState extends State<NewTwt> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Avatar(
-                imageUrl: user.imageUrl,
+                imageUrl: user.twter.avatar.toString(),
               ),
               const SizedBox(width: 16.0),
               Flexible(
@@ -151,6 +144,7 @@ class _NewTwtState extends State<NewTwt> {
                         controller: _scrollbarController,
                         isAlwaysShown: true,
                         child: ListView(
+                          controller: _scrollbarController,
                           scrollDirection: Axis.horizontal,
                           children: [
                             IconButton(
@@ -221,7 +215,7 @@ class _NewTwtState extends State<NewTwt> {
                                 return IconButton(
                                   tooltip: 'Upload image from gallery',
                                   icon: isLoading
-                                      ? _iconButtonLoading
+                                      ? SizedSpinner()
                                       : Icon(Icons.photo_library),
                                   onPressed: isLoading ? null : _onPressed,
                                 );
@@ -247,7 +241,7 @@ class _NewTwtState extends State<NewTwt> {
                                 return IconButton(
                                   tooltip: 'Upload image from camera',
                                   icon: isLoading
-                                      ? _iconButtonLoading
+                                      ? SizedSpinner()
                                       : Icon(Icons.camera_alt),
                                   onPressed: isLoading ? null : _onPressed,
                                 );
