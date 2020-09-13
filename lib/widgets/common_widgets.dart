@@ -9,13 +9,15 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:goryon/screens/profile.dart';
 
-import 'api.dart';
-import 'models.dart';
-import 'screens/discover.dart';
-import 'screens/follow.dart';
-import 'screens/newtwt.dart';
-import 'screens/timeline.dart';
-import 'viewmodels.dart';
+import '../api.dart';
+import '../models.dart';
+import '../screens/discover.dart';
+import '../screens/follow.dart';
+import '../screens/newtwt.dart';
+import '../screens/timeline.dart';
+import '../screens/videoscreen.dart';
+import '../viewmodels.dart';
+import 'package:path/path.dart' as path;
 
 class Avatar extends StatelessWidget {
   const Avatar({
@@ -215,43 +217,56 @@ class _PostListState extends State<PostList> {
     }
   }
 
+  void pushToProfileScreen(BuildContext context, String nick, Uri uri) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return Consumer<Api>(
+            builder: (context, api, child) => ChangeNotifierProvider(
+              create: (_) => ProfileViewModel(api),
+              child: ProfileScreen(
+                name: nick,
+                uri: uri,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer2<User, Api>(
       builder: (context, user, api, _) => CustomScrollView(
+        cacheExtent: 1000,
         controller: _scrollController,
         slivers: [
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (_, idx) {
                 final twt = widget.twts[idx];
-                final isPodMember = user.getNickFromTwtxtURL(
-                      user.profile.uri.toString(),
-                    ) !=
-                    null;
+
+                Function onTwterTap = user.getNickFromTwtxtURL(
+                          user.profile.uri.toString(),
+                        ) !=
+                        null
+                    ? () => pushToProfileScreen(
+                          context,
+                          twt.twter.nick,
+                          twt.twter.uri,
+                        )
+                    : null;
 
                 return ListTile(
                   isThreeLine: true,
-                  leading: Avatar(imageUrl: twt.twter.avatar.toString()),
+                  leading: GestureDetector(
+                    onTap: onTwterTap,
+                    child: Avatar(imageUrl: twt.twter.avatar.toString()),
+                  ),
                   title: GestureDetector(
-                    onTap: isPodMember
-                        ? () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return ChangeNotifierProvider(
-                                    create: (_) => ProfileViewModel(api),
-                                    child: ProfileScreen(
-                                      name: twt.twter.nick,
-                                      uri: twt.twter.uri,
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          }
-                        : null,
+                    onTap: onTwterTap,
                     child: Text(
                       twt.twter.nick,
                       style: Theme.of(context).textTheme.headline6,
@@ -264,44 +279,80 @@ class _PostListState extends State<PostList> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: MarkdownBody(
                           styleSheet: MarkdownStyleSheet(),
-                          imageBuilder: (uri, title, alt) => GestureDetector(
-                            onTap: () async {
-                              if (await canLaunch(uri.toString())) {
-                                await launch(uri.toString());
-                                return;
+                          imageBuilder: (uri, title, alt) => Builder(
+                            builder: (context) {
+                              Uri newUri = uri;
+                              bool isVideoThumbnail = false;
+
+                              if (path.extension(uri.path) == '.webm') {
+                                isVideoThumbnail = true;
+                                newUri = uri.replace(
+                                  path:
+                                      '${path.withoutExtension(uri.path)}.webp',
+                                );
                               }
 
-                              Scaffold.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Failed to launch image'),
+                              final onTap = () async {
+                                if (isVideoThumbnail) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => VideoScreen(
+                                        title: title,
+                                        videoURL: uri.toString(),
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                if (await canLaunch(uri.toString())) {
+                                  await launch(uri.toString());
+                                  return;
+                                }
+
+                                Scaffold.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to launch image'),
+                                  ),
+                                );
+                              };
+
+                              final image = CachedNetworkImage(
+                                httpHeaders: {
+                                  HttpHeaders.acceptHeader: "image/webp"
+                                },
+                                imageUrl: newUri.toString(),
+                                placeholder: (context, url) =>
+                                    CircularProgressIndicator(),
+                              );
+
+                              return GestureDetector(
+                                onTap: onTap,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    image,
+                                    if (isVideoThumbnail)
+                                      Center(
+                                        child: Icon(
+                                          Icons.play_arrow,
+                                          color: Colors.white,
+                                          size: 100.0,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               );
                             },
-                            child: CachedNetworkImage(
-                              httpHeaders: {
-                                HttpHeaders.acceptHeader: "image/webp"
-                              },
-                              imageUrl: uri.toString(),
-                              placeholder: (context, url) =>
-                                  CircularProgressIndicator(),
-                            ),
                           ),
                           onTapLink: (link) async {
                             final nick = user.getNickFromTwtxtURL(link);
                             if (nick != null) {
-                              Navigator.push(
+                              pushToProfileScreen(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return ChangeNotifierProvider(
-                                      create: (_) => ProfileViewModel(api),
-                                      child: ProfileScreen(
-                                        name: nick,
-                                        uri: Uri.parse(link),
-                                      ),
-                                    );
-                                  },
-                                ),
+                                nick,
+                                Uri.parse(link),
                               );
                               return;
                             }
