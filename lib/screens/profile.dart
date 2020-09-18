@@ -6,6 +6,9 @@ import '../api.dart';
 import '../widgets/common_widgets.dart';
 import '../models.dart';
 import '../viewmodels.dart';
+import 'package:http/http.dart' as http;
+
+import 'newtwt.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String name;
@@ -29,7 +32,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchProfileFuture = _fetchProfile();
+    _fetchProfileFuture = _fetchProfile().then((_) async {
+      return await _fetchNewPost();
+    });
   }
 
   Future _fetchProfile() async {
@@ -72,11 +77,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _fetchNewPost() async {
+    try {
+      await context.read<ProfileViewModel>().refreshPost();
+    } on http.ClientException catch (e) {
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      rethrow;
+    }
+  }
+
+  void _page(BuildContext context) async {
+    try {
+      await context.read<ProfileViewModel>().gotoNextPage();
+    } on http.ClientException catch (e) {
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   List<Widget> buildSlivers() {
     final profileViewModel = context.read<ProfileViewModel>();
 
     return [
-      SliverAppBar(title: Text(widget.name), pinned: true),
+      SliverAppBar(title: Text(widget.name), pinned: true, elevation: 0),
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -271,6 +293,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profileViewModel = context.watch<ProfileViewModel>();
+    final user = context.watch<User>();
     return FutureBuilder(
       future: _fetchProfileFuture,
       builder: (context, snapshot) {
@@ -312,8 +336,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
         return Scaffold(
-          body: CustomScrollView(
-            slivers: buildSlivers(),
+          floatingActionButton: Builder(
+            builder: (context) => FloatingActionButton(
+              child: Icon(Icons.add),
+              onPressed: () async {
+                var mention = '${profileViewModel.profile.mention} ';
+                if (user.profile.username ==
+                    profileViewModel.profile.username) {
+                  mention = "";
+                }
+
+                if (await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NewTwt(initialText: mention),
+                      ),
+                    ) ??
+                    false) {
+                  _fetchNewPost();
+                }
+              },
+            ),
+          ),
+          body: PostList(
+            isBottomListLoading: profileViewModel.isBottomListLoading,
+            gotoNextPage: () => _page(context),
+            fetchNewPost: profileViewModel.refreshPost,
+            twts: profileViewModel.twts,
+            topSlivers: buildSlivers(),
           ),
         );
       },
@@ -339,10 +389,7 @@ class UserList extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
-            title: Text(title),
-            pinned: true,
-          ),
+          SliverAppBar(elevation: 0, title: Text(title), pinned: true),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (BuildContext context, int index) {

@@ -153,14 +153,14 @@ class Twt {
 }
 
 @JsonSerializable()
-class TimelineResponse {
+class PagedResponse {
   final List<Twt> twts;
   @JsonKey(name: 'Pager')
   final PagerResponse pagerResponse;
 
-  TimelineResponse(this.twts, this.pagerResponse);
+  PagedResponse(this.twts, this.pagerResponse);
 
-  factory TimelineResponse.fromJson(Map<String, dynamic> json) =>
+  factory PagedResponse.fromJson(Map<String, dynamic> json) =>
       _$TimelineResponseFromJson(json);
   Map<String, dynamic> toJson() => _$TimelineResponseToJson(this);
 }
@@ -214,6 +214,10 @@ class Profile {
     this.following,
     this.tagline,
   );
+
+  String get mention {
+    return '@$username';
+  }
 
   bool isFollowing(String uri) {
     return following.containsValue(uri);
