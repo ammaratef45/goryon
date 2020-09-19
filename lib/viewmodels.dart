@@ -42,16 +42,20 @@ class AuthViewModel {
   }
 
   Future<void> login(String username, String password, String podURL) async {
-    var uri = Uri.parse(podURL);
+    // var uri = Uri.parse(podURL);
 
-    if (!uri.hasScheme) {
-      uri = Uri.https(podURL, "");
-    }
+    // if (!uri.hasScheme) {
+    //   uri = Uri.https(podURL, "");
+    // }
 
     final user = await _api.login(
       username,
       password,
-      uri,
+      Uri(
+        scheme: "http",
+        host: "0.0.0.0",
+        port: 8000,
+      ),
     );
     _user.add(user);
   }
@@ -180,6 +184,9 @@ class NewTwtViewModel {
 
 class ProfileViewModel extends ChangeNotifier {
   final Api _api;
+  final Uri _uri;
+  final Profile _loggedInUserProfile;
+
   ProfileResponse _profileResponse;
   bool _isBottomListLoading;
   PagedResponse _lastTimelineResponse;
@@ -201,6 +208,30 @@ class ProfileViewModel extends ChangeNotifier {
   int get followerCount => followers?.length ?? 0;
   bool get hasFollowers => followerCount > 0;
 
+  bool get isExternalProfile => _uri.pathSegments.first == "external";
+  String get externalUserSlug => _uri.pathSegments[1];
+  String get externalUserNick => _uri.pathSegments[2];
+
+  String get nick {
+    if (isExternalProfile) {
+      return externalUserNick;
+    }
+
+    if (_uri.pathSegments.first == "user") {
+      return _uri.pathSegments[1];
+    }
+
+    return "";
+  }
+
+  get isViewingOwnProfile {
+    return _loggedInUserProfile.uri == _uri;
+  }
+
+  get isFollowing {
+    return _loggedInUserProfile.isFollowing(_uri.toString());
+  }
+
   set profileResponse(ProfileResponse profileResponse) {
     _profileResponse = profileResponse;
     notifyListeners();
@@ -217,17 +248,20 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  ProfileViewModel(this._api) {
+  ProfileViewModel(this._api, this._uri, this._loggedInUserProfile) {
     _twts = [];
     _isBottomListLoading = false;
   }
 
-  Future<void> fetchProfile(String name, [String url]) async {
-    if (url != null) {
-      profileResponse = await _api.getExternalProfile(name, url);
+  Future<void> fetchProfile() async {
+    if (isExternalProfile) {
+      profileResponse = await _api.getExternalProfile(
+        externalUserNick,
+        externalUserSlug,
+      );
       return;
     }
-    profileResponse = await _api.getProfile(name);
+    profileResponse = await _api.getProfile(nick);
   }
 
   Future<void> gotoNextPage() async {

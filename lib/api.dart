@@ -227,7 +227,7 @@ class Api {
         jsonDecode(utf8.decode(response.bodyBytes)));
   }
 
-  Future<ProfileResponse> getExternalProfile(String nick, String url) async {
+  Future<ProfileResponse> getExternalProfile(String nick, String slug) async {
     throw UnimplementedError('getExternalProfile needs to be implemented');
   }
 

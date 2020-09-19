@@ -11,13 +11,8 @@ import 'package:http/http.dart' as http;
 import 'newtwt.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final String name;
-  final Uri uri;
-
   const ProfileScreen({
     Key key,
-    @required this.name,
-    @required this.uri,
   }) : super(key: key);
 
   @override
@@ -38,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future _fetchProfile() async {
-    await context.read<ProfileViewModel>().fetchProfile(widget.name);
+    await context.read<ProfileViewModel>().fetchProfile();
   }
 
   Future _follow(String nick, String url, BuildContext context) async {
@@ -98,7 +93,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profileViewModel = context.read<ProfileViewModel>();
 
     return [
-      SliverAppBar(title: Text(widget.name), pinned: true, elevation: 0),
+      SliverAppBar(
+        title: Text(profileViewModel.nick),
+        pinned: true,
+        elevation: 0,
+      ),
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -219,11 +218,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             Consumer<User>(
               builder: (context, user, _) {
-                if (user.profile.uri == widget.uri) {
+                if (profileViewModel.isViewingOwnProfile) {
                   return Container();
                 }
 
-                if (user.profile.isFollowing(widget.uri.toString())) {
+                if (profileViewModel.isFollowing) {
                   return FutureBuilder(
                     future: _unFollowFuture,
                     builder: (context, snapshot) {
@@ -301,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             appBar: AppBar(
-              title: Text(widget.name),
+              title: Text(profileViewModel.nick),
             ),
             body: Center(
               child: CircularProgressIndicator(),
@@ -312,7 +311,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (snapshot.hasError) {
           return Scaffold(
             appBar: AppBar(
-              title: Text(widget.name),
+              title: Text(profileViewModel.nick),
             ),
             body: Center(
               child: Column(
@@ -405,11 +404,10 @@ class UserList extends StatelessWidget {
                           return ChangeNotifierProvider(
                             create: (_) => ProfileViewModel(
                               context.read<Api>(),
+                              Uri.parse(entry.value),
+                              context.read<User>().profile,
                             ),
-                            child: ProfileScreen(
-                              name: entry.key,
-                              uri: Uri.parse(entry.value),
-                            ),
+                            child: ProfileScreen(),
                           );
                         },
                       ),

@@ -219,19 +219,18 @@ class _PostListState extends State<PostList> {
     }
   }
 
-  void pushToProfileScreen(BuildContext context, String nick, Uri uri) {
+  void pushToProfileScreen(BuildContext context, Uri uri) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) {
-          return Consumer<Api>(
-            builder: (context, api, child) => ChangeNotifierProvider(
-              create: (_) => ProfileViewModel(api),
-              child: ProfileScreen(
-                name: nick,
-                uri: uri,
-              ),
+          return ChangeNotifierProvider(
+            create: (_) => ProfileViewModel(
+              context.read<Api>(),
+              uri,
+              context.read<User>().profile,
             ),
+            child: ProfileScreen(),
           );
         },
       ),
@@ -257,7 +256,6 @@ class _PostListState extends State<PostList> {
                     onTap: () {
                       pushToProfileScreen(
                         context,
-                        twt.twter.nick,
                         twt.twter.uri,
                       );
                     },
@@ -359,7 +357,6 @@ class _PostListState extends State<PostList> {
                             if (nick != null) {
                               pushToProfileScreen(
                                 context,
-                                nick,
                                 Uri.parse(link),
                               );
                               return;
