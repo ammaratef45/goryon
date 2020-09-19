@@ -251,21 +251,16 @@ class _PostListState extends State<PostList> {
               (_, idx) {
                 final twt = widget.twts[idx];
 
-                final onTwterTap = user.getNickFromTwtxtURL(
-                          user.profile.uri.toString(),
-                        ) !=
-                        null
-                    ? () => pushToProfileScreen(
-                          context,
-                          twt.twter.nick,
-                          twt.twter.uri,
-                        )
-                    : null;
-
                 return ListTile(
                   isThreeLine: true,
                   title: GestureDetector(
-                    onTap: onTwterTap,
+                    onTap: () {
+                      pushToProfileScreen(
+                        context,
+                        twt.twter.nick,
+                        twt.twter.uri,
+                      );
+                    },
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -330,30 +325,31 @@ class _PostListState extends State<PostList> {
                                 );
                               }
 
-                              final image = CachedNetworkImage(
-                                httpHeaders: {
-                                  HttpHeaders.acceptHeader: "image/webp"
-                                },
-                                imageUrl: newUri.toString(),
-                                placeholder: (context, url) =>
-                                    CircularProgressIndicator(),
-                              );
-
                               return GestureDetector(
                                 onTap: onTap,
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    image,
-                                    if (isVideoThumbnail)
-                                      Center(
-                                        child: Icon(
-                                          Icons.play_arrow,
-                                          color: Colors.white,
-                                          size: 100.0,
-                                        ),
-                                      ),
-                                  ],
+                                child: CachedNetworkImage(
+                                  httpHeaders: {
+                                    HttpHeaders.acceptHeader: "image/webp"
+                                  },
+                                  imageUrl: newUri.toString(),
+                                  placeholder: (context, url) =>
+                                      CircularProgressIndicator(),
+                                  imageBuilder: (context, imageProvider) {
+                                    return Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Image(image: imageProvider),
+                                        if (isVideoThumbnail)
+                                          Center(
+                                            child: Icon(
+                                              Icons.play_arrow,
+                                              color: Colors.white,
+                                              size: 100.0,
+                                            ),
+                                          ),
+                                      ],
+                                    );
+                                  },
                                 ),
                               );
                             },
