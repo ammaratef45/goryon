@@ -219,7 +219,7 @@ class _PostListState extends State<PostList> {
     }
   }
 
-  void pushToProfileScreen(BuildContext context, Uri uri) {
+  void pushToProfileScreen(BuildContext context, Uri uri, String slug) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -228,6 +228,7 @@ class _PostListState extends State<PostList> {
             create: (_) => ProfileViewModel(
               context.read<Api>(),
               uri,
+              slug,
               context.read<User>().profile,
             ),
             child: ProfileScreen(),
@@ -257,6 +258,7 @@ class _PostListState extends State<PostList> {
                       pushToProfileScreen(
                         context,
                         twt.twter.uri,
+                        twt.twter.slug,
                       );
                     },
                     child: Row(

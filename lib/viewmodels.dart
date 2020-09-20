@@ -42,21 +42,19 @@ class AuthViewModel {
   }
 
   Future<void> login(String username, String password, String podURL) async {
-    // var uri = Uri.parse(podURL);
+    var uri = Uri.parse(podURL);
 
-    // if (!uri.hasScheme) {
-    //   uri = Uri.https(podURL, "");
-    // }
+    if (!uri.hasScheme) {
+      uri = Uri.https(podURL, "");
+    }
 
-    final user = await _api.login(
-      username,
-      password,
-      Uri(
-        scheme: "http",
-        host: "0.0.0.0",
-        port: 8000,
-      ),
-    );
+    final user = await _api.login(username, password, uri
+        // Uri(
+        //   scheme: "http",
+        //   host: "0.0.0.0",
+        //   port: 8000,
+        // ),
+        );
     _user.add(user);
   }
 }
@@ -185,6 +183,7 @@ class NewTwtViewModel {
 class ProfileViewModel extends ChangeNotifier {
   final Api _api;
   final Uri _uri;
+  final String _slug;
   final Profile _loggedInUserProfile;
 
   ProfileResponse _profileResponse;
@@ -248,7 +247,12 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  ProfileViewModel(this._api, this._uri, this._loggedInUserProfile) {
+  ProfileViewModel(
+    this._api,
+    this._uri,
+    this._slug,
+    this._loggedInUserProfile,
+  ) {
     _twts = [];
     _isBottomListLoading = false;
   }
