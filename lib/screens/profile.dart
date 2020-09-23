@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../api.dart';
 import '../widgets/common_widgets.dart';
 import '../models.dart';
 import '../viewmodels.dart';
@@ -11,14 +10,7 @@ import 'package:http/http.dart' as http;
 import 'newtwt.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final String name;
-  final Uri uri;
-
-  const ProfileScreen({
-    Key key,
-    @required this.name,
-    @required this.uri,
-  }) : super(key: key);
+  const ProfileScreen({Key key}) : super(key: key);
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -38,7 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future _fetchProfile() async {
-    await context.read<ProfileViewModel>().fetchProfile(widget.name);
+    await context.read<ProfileViewModel>().fetchProfile();
   }
 
   Future _follow(String nick, String url, BuildContext context) async {
@@ -98,7 +90,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profileViewModel = context.read<ProfileViewModel>();
 
     return [
-      SliverAppBar(title: Text(widget.name), pinned: true, elevation: 0),
+      SliverAppBar(
+        title: Text(profileViewModel.name),
+        pinned: true,
+        elevation: 0,
+      ),
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -117,70 +113,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderColor: Theme.of(context).primaryColor,
                     ),
                   ),
-                  Flexible(
-                    flex: 2,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        GestureDetector(
-                          onTap: profileViewModel.hasFollowing
-                              ? () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      fullscreenDialog: true,
-                                      builder: (context) {
-                                        return UserList(
-                                          usersAndURL:
-                                              profileViewModel.following,
-                                          title: 'Following',
-                                        );
-                                      },
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: Column(
-                            children: [
-                              Text(
-                                profileViewModel.followingCount.toString(),
-                                style: Theme.of(context).textTheme.headline6,
-                              ),
-                              Text('Following')
-                            ],
+                  if (!profileViewModel.isProfileExternal)
+                    Flexible(
+                      flex: 2,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          GestureDetector(
+                            onTap: profileViewModel.hasFollowing
+                                ? () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        fullscreenDialog: true,
+                                        builder: (context) {
+                                          return UserList(
+                                            usersAndURL:
+                                                profileViewModel.following,
+                                            title: 'Following',
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            child: Column(
+                              children: [
+                                Text(
+                                  profileViewModel.followingCount.toString(),
+                                  style: Theme.of(context).textTheme.headline6,
+                                ),
+                                Text('Following')
+                              ],
+                            ),
                           ),
-                        ),
-                        GestureDetector(
-                          onTap: profileViewModel.hasFollowers
-                              ? () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      fullscreenDialog: true,
-                                      builder: (context) {
-                                        return UserList(
-                                          usersAndURL:
-                                              profileViewModel.followers,
-                                          title: 'Followers',
-                                        );
-                                      },
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: Column(
-                            children: [
-                              Text(
-                                profileViewModel.followerCount.toString(),
-                                style: Theme.of(context).textTheme.headline6,
-                              ),
-                              Text('Followers')
-                            ],
-                          ),
-                        )
-                      ],
+                          GestureDetector(
+                            onTap: profileViewModel.hasFollowers
+                                ? () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        fullscreenDialog: true,
+                                        builder: (context) {
+                                          return UserList(
+                                            usersAndURL:
+                                                profileViewModel.followers,
+                                            title: 'Followers',
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            child: Column(
+                              children: [
+                                Text(
+                                  profileViewModel.followerCount.toString(),
+                                  style: Theme.of(context).textTheme.headline6,
+                                ),
+                                Text('Followers')
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
               SizedBox(height: 16),
@@ -219,11 +216,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             Consumer<User>(
               builder: (context, user, _) {
-                if (user.profile.uri == widget.uri) {
+                if (profileViewModel.isViewingOwnProfile) {
                   return Container();
                 }
 
-                if (user.profile.isFollowing(widget.uri.toString())) {
+                if (profileViewModel.isFollowing) {
                   return FutureBuilder(
                     future: _unFollowFuture,
                     builder: (context, snapshot) {
@@ -301,7 +298,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             appBar: AppBar(
-              title: Text(widget.name),
+              title: Text(profileViewModel.name),
             ),
             body: Center(
               child: CircularProgressIndicator(),
@@ -312,7 +309,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (snapshot.hasError) {
           return Scaffold(
             appBar: AppBar(
-              title: Text(widget.name),
+              title: Text(profileViewModel.name),
             ),
             body: Center(
               child: Column(
@@ -398,22 +395,22 @@ class UserList extends StatelessWidget {
                   title: Text(entry.key),
                   subtitle: Text(Uri.parse(entry.value).host),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return ChangeNotifierProvider(
-                            create: (_) => ProfileViewModel(
-                              context.read<Api>(),
-                            ),
-                            child: ProfileScreen(
-                              name: entry.key,
-                              uri: Uri.parse(entry.value),
-                            ),
-                          );
-                        },
-                      ),
-                    );
+                    // ignore: todo
+                    // TODO: Fix this one after slugifying the Followrs/Following map is implemented
+                    //  in this issue  https://github.com/jointwt/twtxt/issues/210
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) {
+                    //       return ChangeNotifierProvider(
+                    //         create: (_) => ProfileViewModel(
+                    //           context.read<Api>(),
+                    //         ),
+                    //         child: ProfileScreen()
+                    //       );
+                    //     },
+                    //   ),
+                    // );
                   },
                 );
               },

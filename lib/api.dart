@@ -224,18 +224,41 @@ class Api {
     }
 
     return ProfileResponse.fromJson(
-        jsonDecode(utf8.decode(response.bodyBytes)));
+      jsonDecode(
+        utf8.decode(response.bodyBytes),
+      ),
+    );
   }
 
-  Future<ProfileResponse> getExternalProfile(String nick, String url) async {
-    throw UnimplementedError('getExternalProfile needs to be implemented');
+  Future<ProfileResponse> getExternalProfile(String nick, String slug) async {
+    final _user = await user;
+    final response = await _httpClient.get(
+      _user.profile.uri.replace(path: "/api/v1/external/$slug/$nick"),
+    );
+
+    if (response.statusCode >= 400) {
+      throw http.ClientException(
+        'Failed fetch profile. Please try again later',
+      );
+    }
+
+    return ProfileResponse.fromJson(
+      jsonDecode(
+        utf8.decode(response.bodyBytes),
+      ),
+    );
   }
 
-  Future<PagedResponse> getUserTwts(int page, String name) async {
+  Future<PagedResponse> getUserTwts(int page, String nick,
+      [String slug = '']) async {
     final _user = await user;
     final response = await _httpClient.post(
-      _user.profile.uri.replace(path: "/api/v1/profile/$name/twts"),
-      body: jsonEncode({'page': page}),
+      _user.profile.uri.replace(path: "/api/v1/fetch-twts"),
+      body: jsonEncode({
+        'page': page,
+        'nick': nick,
+        'slug': slug,
+      }),
       headers: {
         'Token': _user.token,
         HttpHeaders.contentTypeHeader: ContentType.json.toString(),
