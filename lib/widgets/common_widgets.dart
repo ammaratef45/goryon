@@ -189,15 +189,15 @@ class PostList extends StatefulWidget {
     @required this.fetchNewPost,
     @required this.gotoNextPage,
     @required this.twts,
-    @required this.isBottomListLoading,
+    @required this.fetchMoreState,
     this.topSlivers = const <Widget>[],
   }) : super(key: key);
 
   final Function fetchNewPost;
   final Function gotoNextPage;
-  final bool isBottomListLoading;
   final List<Twt> twts;
   final List<Widget> topSlivers;
+  final FetchState fetchMoreState;
 
   @override
   _PostListState createState() => _PostListState();
@@ -215,7 +215,7 @@ class _PostListState extends State<PostList> {
   void initiateLoadMoreOnScroll() {
     if (_scrollController.position.pixels >
             _scrollController.position.maxScrollExtent * 0.9 &&
-        !widget.isBottomListLoading) {
+        widget.fetchMoreState == FetchState.Done) {
       widget.gotoNextPage();
     }
   }
@@ -425,16 +425,95 @@ class _PostListState extends State<PostList> {
             childCount: widget.twts.length,
           ),
         ),
-        if (widget.isBottomListLoading)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 64.0),
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          )
+        SliverToBoxAdapter(
+          child: Builder(
+            builder: (context) {
+              switch (widget.fetchMoreState) {
+                case FetchState.Loading:
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 64.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                case FetchState.Error:
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32.0),
+                    child: UnexpectedErrorMessage(
+                      onRetryPressed: widget.gotoNextPage,
+                    ),
+                  );
+                default:
+                  return SizedBox.shrink();
+              }
+            },
+          ),
+        )
       ],
+    );
+  }
+}
+
+class UnexpectedErrorMessage extends StatelessWidget {
+  final VoidCallback onRetryPressed;
+  final String description;
+  final String buttonLabel;
+  const UnexpectedErrorMessage({
+    Key key,
+    this.onRetryPressed,
+    this.buttonLabel,
+    this.description,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.watch<AppStrings>();
+    return ErrorMessage(
+      onButtonPressed: onRetryPressed,
+      description: Column(
+        children: [
+          Text(
+            description ?? strings.unexpectedError,
+            style: Theme.of(context).textTheme.bodyText1,
+          ),
+          SizedBox(height: 32),
+        ],
+      ),
+      buttonChild: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.refresh),
+          SizedBox(width: 8),
+          Text(buttonLabel ?? strings.tapToRetry),
+        ],
+      ),
+    );
+  }
+}
+
+class ErrorMessage extends StatelessWidget {
+  final VoidCallback onButtonPressed;
+  final Widget description;
+  final Widget buttonChild;
+  const ErrorMessage({
+    Key key,
+    this.onButtonPressed,
+    this.buttonChild,
+    this.description,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          description,
+          RaisedButton(
+            color: Theme.of(context).colorScheme.error,
+            onPressed: onButtonPressed,
+            child: buttonChild,
+          )
+        ],
+      ),
     );
   }
 }
