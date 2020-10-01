@@ -51,7 +51,7 @@ class AuthViewModel {
     final user = await _api.login(
       username,
       password,
-      Uri(scheme: "http", port: 8000, host: "0.0.0.0"),
+      uri,
     );
     _user.add(user);
   }
@@ -293,7 +293,7 @@ class ProfileViewModel extends ChangeNotifier {
 
   bool get isViewingOwnProfile => _loggedInUserProfile.uri == twter.uri;
   bool get isFollowing =>
-      _loggedInUserProfile.isFollowing(twter.uri.toString());
+      _loggedInUserProfile.isFollowing(profile.uri.toString());
   bool get isProfileExternal => !_twter.isPodMember(_loggedInUserProfile.uri);
 
   FetchState get fetchMoreState => _fetchMoreState;
