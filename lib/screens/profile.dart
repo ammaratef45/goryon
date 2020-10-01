@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../widgets/common_widgets.dart';
+import '../api.dart';
 import '../models.dart';
 import '../viewmodels.dart';
-
+import '../widgets/common_widgets.dart';
 import 'newtwt.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -376,22 +376,23 @@ class UserList extends StatelessWidget {
                   title: Text(entry.key),
                   subtitle: Text(Uri.parse(entry.value).host),
                   onTap: () {
-                    // ignore: todo
-                    // TODO: Fix this one after slugifying the Followrs/Following map is implemented
-                    //  in this issue  https://github.com/jointwt/twtxt/issues/210
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) {
-                    //       return ChangeNotifierProvider(
-                    //         create: (_) => ProfileViewModel(
-                    //           context.read<Api>(),
-                    //         ),
-                    //         child: ProfileScreen()
-                    //       );
-                    //     },
-                    //   ),
-                    // );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return ChangeNotifierProvider(
+                            create: (_) => ProfileViewModel(
+                                context.read<Api>(),
+                                Twter(
+                                  nick: entry.key,
+                                  uri: Uri.parse(entry.value),
+                                ),
+                                context.read<User>().profile),
+                            child: ProfileScreen(),
+                          );
+                        },
+                      ),
+                    );
                   },
                 );
               },

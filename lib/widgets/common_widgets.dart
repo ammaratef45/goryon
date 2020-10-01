@@ -241,21 +241,18 @@ class _PostListState extends State<PostList> {
     );
   }
 
-  Twter getNickFromTwtxtURL(Uri uriFromMarkdown, Uri uriFromLoggedInUser) {
-    if (uriFromMarkdown.pathSegments.length == 2 &&
-        uriFromMarkdown.pathSegments.first == "user") {
-      return Twter(nick: uriFromMarkdown.pathSegments[1]);
+  Twter getNickFromTwtxtURL(String link) {
+    if(!link.endsWith("twtxt.txt")) {
+      return null;
     }
 
-    if (uriFromMarkdown.pathSegments.length == 3 &&
-        uriFromMarkdown.pathSegments.first == "external") {
-      return Twter(
-        slug: uriFromMarkdown.pathSegments[1],
-        nick: uriFromMarkdown.pathSegments[2],
-      );
+    final split = link.split("|").toList();
+
+    if(split.length != 2) {
+      return null;
     }
 
-    return null;
+    return Twter(nick: split.first, uri: Uri.parse(split.last));
   }
 
   Widget buildMarkdownBody(BuildContext context, Twt twt) {
@@ -315,7 +312,7 @@ class _PostListState extends State<PostList> {
         },
       ),
       onTapLink: (link) async {
-        final twter = getNickFromTwtxtURL(Uri.parse(link), user.profile.uri);
+        final twter = getNickFromTwtxtURL(link);
         if (twter != null) {
           pushToProfileScreen(context, twter);
           return;

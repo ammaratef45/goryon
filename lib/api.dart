@@ -248,10 +248,14 @@ class Api {
     );
   }
 
-  Future<ProfileResponse> getExternalProfile(String nick, String slug) async {
+  Future<ProfileResponse> getExternalProfile(String nick, String url) async {
     final _user = await user;
-    final response = await _httpClient.get(
-      _user.profile.uri.replace(path: "/api/v1/external/$slug/$nick"),
+    final response = await _httpClient.post(
+      _user.profile.uri.replace(path: "/api/v1/external"),
+      body: jsonEncode({
+        "nick": nick,
+        "url": url,
+      })
     );
 
     if (response.statusCode >= 400) {
@@ -268,14 +272,14 @@ class Api {
   }
 
   Future<PagedResponse> getUserTwts(int page, String nick,
-      [String slug = '']) async {
+      [String url = '']) async {
     final _user = await user;
     final response = await _httpClient.post(
       _user.profile.uri.replace(path: "/api/v1/fetch-twts"),
       body: jsonEncode({
         'page': page,
         'nick': nick,
-        'slug': slug,
+        'url': url,
       }),
       headers: {
         'Token': _user.token,
