@@ -242,17 +242,18 @@ class _PostListState extends State<PostList> {
   }
 
   Twter getNickFromTwtxtURL(String link) {
-    if(!link.endsWith("twtxt.txt")) {
+    Uri uri;
+    try {
+      uri = Uri.parse(link);
+      if(uri.pathSegments.last != "twtxt.txt") {
+        return null;
+      }
+    } catch (e) {
       return null;
     }
 
-    final split = link.split("|").toList();
 
-    if(split.length != 2) {
-      return null;
-    }
-
-    return Twter(nick: split.first, uri: Uri.parse(split.last));
+    return Twter(nick: uri.fragment, uri: uri.replace(fragment: ""));
   }
 
   Widget buildMarkdownBody(BuildContext context, Twt twt) {
